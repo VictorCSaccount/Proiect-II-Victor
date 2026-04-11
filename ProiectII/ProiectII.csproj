@@ -23,9 +23,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="DTO\AuthAccount\" />
-	  <Folder Include="DTO\AdoptionProcess\" />
-	  <Folder Include="DTO\AdminSystem\" />
 	  <Folder Include="Interfaces\" />
 	  <Folder Include="Services\" />
 	</ItemGroup>
