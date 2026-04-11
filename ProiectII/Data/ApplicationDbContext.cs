@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ProiectII.Models;
 
 namespace ProiectII.Data
 {
@@ -8,5 +9,7 @@ namespace ProiectII.Data
             : base(options)
         {
         }
+        public DbSet<Fox> Foxes { get; set; }
+
     }
 }
