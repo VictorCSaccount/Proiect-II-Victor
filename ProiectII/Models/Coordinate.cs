@@ -1,11 +1,15 @@
-﻿namespace ProiectII.Models
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace ProiectII.Models
 {
     public class Coordinate
     {
-        public double Latitude { get; set; }
-        public double Longitude { get; set; }
-        public double? Altitude { get; set; }
-
+        [Precision(18, 10)]
+        public decimal Latitude { get; set; }
+        [Precision(18, 10)]
+        public decimal Longitude { get; set; }
+        [Precision(18, 10)]
+        public decimal? Altitude { get; set; } = null;
         public bool IsValid()
         {
             return Latitude >= -90 && Latitude <= 90 &&

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Drawing;
 
 namespace ProiectII.Models
@@ -12,11 +13,21 @@ namespace ProiectII.Models
         public string Description { get; set; }
 
         [Required]
-        [StringLength(9)] // force the format to be a 9 digits fomrat 
+        [RegularExpression("^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$")] // Validare format HEX pe DB
+        [StringLength(7)] // force the format to be a 7 digits format 
         public string ColorMaskHex { get; set; } // format "#FF0000"
 
         [Range(0.0, 1.0)]
-        public double Opacity { get; set; } // fromat 0.5 ( 50% transparency)
+        public double Opacity { get; set; } // format 0.5 ( 50% transparency)
+
+
+
+        public uint CenterLocationId { get; set; }
+        [ForeignKey("CenterLocationId")]
+
+        public virtual Location CenterLocation { get; set; }
+
+
         public List<EnclosurePoint> PolygonPoints { get; set; } = new List<EnclosurePoint>();
 
         public bool ContainsPoint()
@@ -27,8 +38,8 @@ namespace ProiectII.Models
         public Coordinate GetCenter()
         {
             if (PolygonPoints.Count == 0) return null;
-            double avgLat = PolygonPoints.Average(p => p.Coordinate.Latitude);
-            double avgLon = PolygonPoints.Average(p => p.Coordinate.Longitude);
+            decimal avgLat = PolygonPoints.Average(p => p.Coordinate.Latitude);
+            decimal avgLon = PolygonPoints.Average(p => p.Coordinate.Longitude);
             return new Coordinate { Latitude = avgLat, Longitude = avgLon };
         }
 

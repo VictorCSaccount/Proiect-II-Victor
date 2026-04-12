@@ -1,6 +1,6 @@
 ﻿namespace ProiectII.Models
 {
-    public enum AdoptionStatus
+    public enum AdoptionStatus : uint
     {
         Pending = 1,
         UnderReview = 2,

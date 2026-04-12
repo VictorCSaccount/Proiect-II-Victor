@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ProiectII.Models
 {
@@ -6,23 +7,39 @@ namespace ProiectII.Models
     {
         [Key]
         public uint Id { get; set; }
+
+        [Required]
         public uint FoxId { get; set; }
+
+        [ForeignKey("FoxId")]
         public Fox Fox { get; set; }
 
+        [Required]
+        [MaxLength(450)]
         public uint UserId { get; set; }
+
+        [ForeignKey("UserId")]
         public ApplicationUser User { get; set; }
+
+        [Required]
         public AdoptionStatus AdoptionStatus { get; set; }
         public DateTime RequestDate { get; set; }
 
+        [Required]
+        [MaxLength(500)]
         public string? Reason { get; set; } = null;
 
 
 
 
-        public void ApproveAdoption()
+        public void ApproveAdoption(uint adoptedStatusId)
         {
-            AdoptionStatus = AdoptionStatus.Approved;
-            Fox.Adopt();
+            this.AdoptionStatus = AdoptionStatus.Approved;
+
+            if (this.Fox != null)
+            {
+                this.Fox.Adopt(adoptedStatusId);
+            }
         }
 
         public void RejectAdoption(string reason)

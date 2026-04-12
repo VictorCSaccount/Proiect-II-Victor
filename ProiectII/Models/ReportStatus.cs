@@ -1,6 +1,6 @@
 ﻿namespace ProiectII.Models
 {
-    public enum ReportStatus
+    public enum ReportStatus : uint
     {
         Pending,        
         Investigated,  

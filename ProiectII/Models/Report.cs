@@ -9,14 +9,26 @@ namespace ProiectII.Models
         public uint Id { get; set; }
 
         [Required]
+        [Column(TypeName = "text")]
         public string Description { get; set; } = string.Empty;
-        public uint ReporterId { get; set; }
+
+        [Required]
+        [MaxLength(450)]
+
+        public string UserId { get; set; }
+
         [ForeignKey("ReporterId")]
         public virtual ApplicationUser? Reporter { get; set; }
+
+        [Required]
         public uint LocationId { get; set; }
+
         [ForeignKey("LocationId")]
         public virtual Location? Location { get; set; }
+        
+        [MaxLength(512)]
         public string? ImageUrl { get; set; }
+
         public ReportStatus Status { get; set; } = ReportStatus.Pending;
 
         public void Resolve()

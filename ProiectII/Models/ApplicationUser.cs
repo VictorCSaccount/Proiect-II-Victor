@@ -3,24 +3,39 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ProiectII.Models
 {
-    // Moștenim IdentityUser<uint> pentru că ai vrut ID-uri de tip uint (fără semn)
-    public class ApplicationUser : IdentityUser<uint>
+    // Moștenim IdentityUser<string> pentru că ai vrut ID-uri de tip string 
+    public class ApplicationUser : IdentityUser<string>
     {
         // IdentityUser are deja: Id, UserName, Email, PasswordHash, PhoneNumber
 
         [Required]
+        [MaxLength(50)]
+        public string FirstName { get; set; }
+
+        [Required]
+        [MaxLength(50)]
+        public string LastName { get; set; }
+
+        [Required]
         public DateOnly BornDate { get; set; }
 
-        [MaxLength(255)]
+        [MaxLength(512)] // Sincronizat cu ERD
         public string? ProfilePictureUrl { get; set; }
-        public bool IsActive { get; set; }
+
+        public bool IsActive { get; set; } = true;
 
         public string? DeactivationReason { get; set; } = null;
 
         public DateTime LastLogin { get; set; } = DateTime.UtcNow;
 
-        //  cu SecurityLogs (1:N)
+        //  Relatii !!!! (1:N)
+
         public virtual ICollection<SecurityLog> SecurityLogs { get; set; } = new List<SecurityLog>();
+        public virtual ICollection<Adoption> Adoptions { get; set; } = new List<Adoption>();
+        public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
+        public virtual ICollection<Report> ReportsCreated { get; set; } = new List<Report>();
+
+
 
         public int GetAge()
         {

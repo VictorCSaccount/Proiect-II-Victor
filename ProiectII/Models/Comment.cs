@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ProiectII.Models
 {
@@ -8,12 +9,22 @@ namespace ProiectII.Models
 
         [Key]
         public uint Id { get; set; }
+        [Required]
+        [MaxLength(500)]
         public string Content { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
-        public uint UserId { get; set; } 
+        [Required]
+        [MaxLength(450)]
+        public string UserId { get; set; }
+
+        [ForeignKey("UserId")]
         public ApplicationUser User { get; set; }
-        public uint FoxId { get; set; } 
+
+        [Required]
+        public uint FoxId { get; set; }
+
+        [ForeignKey("FoxId")]
         public Fox Fox { get; set; } 
 
         public bool IsDeleted { get; set; } = false;
