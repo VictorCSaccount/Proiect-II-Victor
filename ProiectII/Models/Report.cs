@@ -13,9 +13,9 @@ namespace ProiectII.Models
         public string Description { get; set; } = string.Empty;
 
         [Required]
-        [MaxLength(450)]
+        [MaxLength(255)]
 
-        public string UserId { get; set; }
+        public string ReporterId { get; set; }
 
         [ForeignKey("ReporterId")]
         public virtual ApplicationUser? Reporter { get; set; }
@@ -29,16 +29,16 @@ namespace ProiectII.Models
         [MaxLength(512)]
         public string? ImageUrl { get; set; }
 
-        public ReportStatus Status { get; set; } = ReportStatus.Pending;
+        public ReportStatus ReportStatus { get; set; } = ReportStatus.Pending;
 
         public void Resolve()
         {
-            if (Status == ReportStatus.Resolved)
+            if (ReportStatus == ReportStatus.Resolved)
             {
                 return;
             }
 
-            Status = ReportStatus.Resolved;
+            ReportStatus = ReportStatus.Resolved;
 
         }
     }

@@ -20,19 +20,29 @@ namespace ProiectII.Models
         // sometimes the coordinates of the foxes are not exact, so we can use this property to define a radius around the coordinates, in which the fox is located. This is useful for the cases when we have only approximate coordinates for the foxes, or when we want to show a general area where the fox is located, instead of a specific point on the map.
         public double PrecisionRadius { get; set; } // precision in meters , defines the area/circle on the map
 
+
         public double GetDistanceTo(Location otherLocation)
         {
-            // Implement the Haversine formula to calculate the distance between two locations based on their coordinates
-            double R = 6371e3; // Earth radius in meters
-            double lat1 = Coordinate.Latitude * Math.PI / 180;
-            double lat2 = otherLocation.Coordinate.Latitude * Math.PI / 180;
-            double deltaLat = (otherLocation.Coordinate.Latitude - Coordinate.Latitude) * Math.PI / 180;
-            double deltaLon = (otherLocation.Coordinate.Longitude - Coordinate.Longitude) * Math.PI / 180;
+            double R = 6371e3;
+
+            double lat1 = (double)Coordinate.Latitude * Math.PI / 180;
+            double lat2 = (double)otherLocation.Coordinate.Latitude * Math.PI / 180;
+
+            double deltaLat = ((double)otherLocation.Coordinate.Latitude - (double)Coordinate.Latitude) * Math.PI / 180;
+            double deltaLon = ((double)otherLocation.Coordinate.Longitude - (double)Coordinate.Longitude) * Math.PI / 180;
+
             double a = Math.Sin(deltaLat / 2) * Math.Sin(deltaLat / 2) +
                        Math.Cos(lat1) * Math.Cos(lat2) *
                        Math.Sin(deltaLon / 2) * Math.Sin(deltaLon / 2);
+
             double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-            return R * c; // distance in meters
+
+            return R * c; 
         }
+
+
+
+
+
     }
 }

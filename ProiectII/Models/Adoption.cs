@@ -15,8 +15,8 @@ namespace ProiectII.Models
         public Fox Fox { get; set; }
 
         [Required]
-        [MaxLength(450)]
-        public uint UserId { get; set; }
+        [MaxLength(255)]
+        public string UserId { get; set; }
 
         [ForeignKey("UserId")]
         public ApplicationUser User { get; set; }

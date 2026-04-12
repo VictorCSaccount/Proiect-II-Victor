@@ -51,7 +51,7 @@ namespace ProiectII.Models
             {
                 var p1 = PolygonPoints[i].Coordinate;
                 var p2 = PolygonPoints[(i + 1) % PolygonPoints.Count].Coordinate;
-                area += p1.Longitude * p2.Latitude - p2.Longitude * p1.Latitude;
+                area += (double) (p1.Longitude * p2.Latitude - p2.Longitude * p1.Latitude);
             }
             return Math.Abs(area / 2.0);
         }

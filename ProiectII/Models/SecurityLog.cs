@@ -8,7 +8,7 @@ namespace ProiectII.Models
         [Key]
         public uint Id { get; set; }
         [Required]
-        [MaxLength(450)]
+        [MaxLength(255)]
         public string UserId { get; set; }
 
         [ForeignKey("UserId")]

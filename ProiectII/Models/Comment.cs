@@ -15,7 +15,7 @@ namespace ProiectII.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
         [Required]
-        [MaxLength(450)]
+        [MaxLength(255)]
         public string UserId { get; set; }
 
         [ForeignKey("UserId")]

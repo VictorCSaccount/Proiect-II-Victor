@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 namespace ProiectII.Models
 {
     // Moștenim IdentityUser<string> pentru că ai vrut ID-uri de tip string 
-    public class ApplicationUser : IdentityUser<string>
+    public class ApplicationUser : IdentityUser
     {
         // IdentityUser are deja: Id, UserName, Email, PasswordHash, PhoneNumber
 
