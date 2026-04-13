@@ -29,7 +29,8 @@ namespace ProiectII.Models
         [MaxLength(500)]
         public string? Reason { get; set; } = null;
 
-
+        [MaxLength(500)]
+        public string? AdminComment { get; set; }
 
 
         public void ApproveAdoption(uint adoptedStatusId)

@@ -40,6 +40,11 @@ namespace ProiectII.Models
         public Enclosure? FoxEnclosure { get; set; }
 
 
+        public virtual ICollection<Adoption>? Adoptions { get; set; } = new List<Adoption>(); 
+        public virtual ICollection<Comment>? Comments { get; set; } = new List<Comment>();
+
+        public virtual ICollection<Report>? Reports { get; set; } = new List<Report>();
+
 
 
         public void Adopt(uint adoptedStatusId)
