@@ -2,7 +2,7 @@
 {
     public class UpdateUserRoleDto
     {
-        public uint UserId { get; set; }
+        public string UserId { get; set; }
         // de vazut aici 
         //TODO de vazut exact!!
 

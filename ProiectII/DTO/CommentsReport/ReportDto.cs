@@ -10,5 +10,7 @@
         public string Status { get; set; } = "Pending"; //il consider dinstart pending.. de vazut daca e bine!!
         public DateTime CreatedAt { get; set; }
         public DateTime LastUpdatedAt { get; set; }
+
+        public string ReporterName { get; set; }  
     }
 }

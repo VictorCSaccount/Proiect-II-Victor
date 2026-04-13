@@ -14,10 +14,12 @@ namespace ProiectII.DTO.FoxManagement
         [Required]
         public uint EnclosureId { get; set; }
 
-        public double Latitude { get; set; }
-        public double Longitude { get; set; }
+        public double LastSeenLatitude { get; set; }
+        public double LastSeenLongitude { get; set; }
 
         // incarcare fisier vulpe!! ( trebuie verificat salvarea imginii..)
         public IFormFile? Image { get; set; }
+
+        public uint StatusId { get; set; }
     }
 }

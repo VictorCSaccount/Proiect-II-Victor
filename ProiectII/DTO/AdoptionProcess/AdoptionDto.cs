@@ -10,5 +10,10 @@
         public DateTime SubmittedAt { get; set; }
         public string ApplicantMessage { get; set; } = string.Empty;
         public string? AdminComment { get; set; }
+
+        public string ApplicantName { get; set; }
+
+        public string ApplicantEmail { get; set;}
+
     }
 }

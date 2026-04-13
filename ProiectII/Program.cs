@@ -1,7 +1,11 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ProiectII.Data;
+using ProiectII.Interfaces;
+using ProiectII.Mappings;
+using ProiectII.Mappings.ProiectII.Mappings;
 using ProiectII.Models;
+using ProiectII.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +22,22 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => {
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
+
+
+
+builder.Services.AddScoped<IFoxRepository, FoxRepository>();
+builder.Services.AddScoped<IAdoptionRepository, AdoptionRepository>();
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
+builder.Services.AddScoped<IEnclosureRepository, EnclosureRepository>();
+
+// Înregistrarea generică - syntaxa e specială pentru că avem <T>
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+//serviciu  pentru automapper!!!
+
+
+
+builder.Services.AddAutoMapper(typeof(MappingProfile));
+
 
 // 3. Servicii pentru API și Swagger (PĂSTREAZĂ-LE, sunt utile pentru testat)
 builder.Services.AddControllersWithViews();
