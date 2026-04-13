@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using ProiectII.Data;
 using ProiectII.Interfaces;
 using ProiectII.Mappings;
-using ProiectII.Mappings.ProiectII.Mappings;
 using ProiectII.Models;
 using ProiectII.Repositories;
 
@@ -47,24 +46,54 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 // 4. INTEGRARE SEEDING (Rulează o singură dată la pornire)
+//using (var scope = app.Services.CreateScope())
+//{
+//    var services = scope.ServiceProvider;
+//    try
+//    {
+//        var context = services.GetRequiredService<ApplicationDbContext>();
+//        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+//        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+
+//        // Apelăm DbInitializer asincron
+//        await DbInitializer.SeedData(context, userManager, roleManager);
+//    }
+//    catch (Exception ex)
+//    {
+//        var logger = services.GetRequiredService<ILogger<Program>>();
+//        logger.LogError(ex, "A apărut o eroare la popularea bazei de date.");
+//    }
+//}
+
+
+// 4. INTEGRARE SEEDING + VERIFICARE MAPPING
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
+        // --- ADAUGĂ ASTA PENTRU AUTOMAPPER ---
+        var mapper = services.GetRequiredService<AutoMapper.IMapper>();
+        mapper.ConfigurationProvider.AssertConfigurationIsValid();
+        // --------------------------------------
+
         var context = services.GetRequiredService<ApplicationDbContext>();
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-        // Apelăm DbInitializer asincron
         await DbInitializer.SeedData(context, userManager, roleManager);
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "A apărut o eroare la popularea bazei de date.");
+        // Dacă eroarea e de la AutoMapper, aici vei vedea detaliile
+        logger.LogError(ex, "Eroare critică la pornire (Mapping sau Seeding).");
+        throw; // Forțăm oprirea dacă maparea e greșită
     }
 }
+
+
+
 
 // 5. Pipeline-ul HTTP
 if (app.Environment.IsDevelopment())

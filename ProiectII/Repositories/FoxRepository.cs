@@ -5,6 +5,7 @@ using ProiectII.Models;
 
 namespace ProiectII.Repositories
 {
+
     public class FoxRepository : GenericRepository<Fox>, IFoxRepository
     {
         public FoxRepository(ApplicationDbContext context) : base(context)
@@ -13,22 +14,24 @@ namespace ProiectII.Repositories
 
         public async Task<IEnumerable<Fox>> GetFoxesWithDetailsAsync()
         {
-            return await _context.Foxes
+            return await _dbSet // Folosim _dbSet din clasa părinte
+                .AsNoTracking() // Optimizare pentru read-only
                 .Include(f => f.Status)
                 .Include(f => f.FoxEnclosure)
                 .Include(f => f.FirstSeenLocation)
                 .Include(f => f.LastSeenLocation)
-                .Where(f => !f.IsDeleted) 
+                .Where(f => !f.IsDeleted)
                 .ToListAsync();
         }
 
         public async Task<Fox?> GetFoxByIdWithDetailsAsync(uint id)
         {
-            return await _context.Foxes
+            return await _dbSet
                 .Include(f => f.Status)
                 .Include(f => f.FoxEnclosure)
                 .Include(f => f.FirstSeenLocation)
-                .FirstOrDefaultAsync(f => f.Id == id);
+                .Include(f => f.LastSeenLocation) // Adăugat pentru consistență
+                .FirstOrDefaultAsync(f => f.Id == id && !f.IsDeleted); // Adăugat filtrul de ștergere
         }
     }
 }

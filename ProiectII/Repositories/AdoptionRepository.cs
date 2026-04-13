@@ -11,9 +11,12 @@ namespace ProiectII.Repositories
 
         public async Task<IEnumerable<Adoption>> GetAdoptionsWithDetailsAsync()
         {
-            return await _context.Adoptions
+            return await _dbSet
+                .AsNoTracking() // Optimizare performanță
+                .Include(a => a.User) // Detalii despre cel care adoptă
                 .Include(a => a.Fox)
-                .Include(a => a.User) // User ul ce  af acut cererea de adoptie
+                    .ThenInclude(f => f.Status) // Critic: să vedem dacă vulpea e încă "Healthy" sau deja "Adopted"
+                .OrderByDescending(a => a.RequestDate) // Adopțiile noi ar trebui să fie primele
                 .ToListAsync();
         }
     }

@@ -2,6 +2,7 @@
 {
     public class UpdateUserRoleDto
     {
+
         public string UserId { get; set; }
         // de vazut aici 
         //TODO de vazut exact!!
