@@ -15,6 +15,10 @@ namespace ProiectII.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
         [Required]
+        public bool IsVisible { get; set; } = true; 
+
+
+        [Required]
         [MaxLength(255)]
         public string UserId { get; set; }
 
