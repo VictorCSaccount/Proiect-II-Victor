@@ -7,5 +7,7 @@ namespace ProiectII.Interfaces
         Task<IEnumerable<Comment>> GetCommentsByFoxIdAsync(uint foxId);
         Task<IEnumerable<Comment>> GetCommentsByUserIdAsync(string userId);
         Task UpdateAsync(Comment comment);
+
+       
     }
 }

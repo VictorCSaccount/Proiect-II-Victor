@@ -19,20 +19,17 @@ namespace ProiectII.Services.CoreDomain
 
         public async Task<FoxDetailsDto> CreateFoxAsync(CreateFoxDto dto)
         {
-            // Aici pui LOGICA:
-            // Ex: Verifici dacă țarcul (EnclosureId) nu e deja plin.
-            // Ex: Salvezi imaginea pe disc și generezi URL-ul.
 
+
+            ////////////////cred ca maitrebuie modificiat
             var foxEntity = _mapper.Map<Fox>(dto);
 
-            // Setăm valori implicite care nu vin din UI
-            //foxEntity.= true;
             foxEntity.IsDeleted = false;
 
-            var createdFox = await _foxRepository.AddAsync(foxEntity);
-            return _mapper.Map<FoxDetailsDto>(createdFox);
-        }
+            await _foxRepository.AddAsync(foxEntity);
 
+            return _mapper.Map<FoxDetailsDto>(foxEntity);
+        }
 
 
         public async Task<IEnumerable<FoxSummaryDto>> GetAllFoxesAsync()

@@ -82,7 +82,7 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
-        // --- ADAUGĂ ASTA PENTRU AUTOMAPPER ---
+        // AUTOMAPPER
         var mapper = services.GetRequiredService<AutoMapper.IMapper>();
         mapper.ConfigurationProvider.AssertConfigurationIsValid();
         // --------------------------------------

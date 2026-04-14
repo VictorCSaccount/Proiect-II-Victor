@@ -32,6 +32,16 @@ namespace ProiectII.Repositories
                 .ToListAsync();
         }
 
+        public async Task<Report?> GetByIdWithDetailsAsync(uint id)
+        {
 
+            return await _context.Reports
+                .Include(r => r.Reporter)
+                .Include(r => r.Location)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+
+
+        }
     }
 }

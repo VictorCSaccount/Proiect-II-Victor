@@ -4,11 +4,7 @@ namespace ProiectII.Models
 {
     public class Coordinate
     {
-        public Coordinate(decimal Latitude, decimal Longitude)
-        {
-            this.Latitude = Latitude;
-            this.Longitude = Longitude;
-        }
+       
 
         [Precision(18, 10)]
         public decimal Latitude { get; set; }

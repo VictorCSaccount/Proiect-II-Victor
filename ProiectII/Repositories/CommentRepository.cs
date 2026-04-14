@@ -6,8 +6,11 @@ namespace ProiectII.Repositories
 {
     public class CommentRepository : GenericRepository<Comment>, ICommentRepository
     {
+
+        private readonly ApplicationDbContext _context;
         public CommentRepository(ApplicationDbContext context) : base(context)
         {
+            _context = context;
         }
 
         public async Task<IEnumerable<Comment>> GetCommentsByFoxIdAsync(uint foxId)
@@ -34,6 +37,17 @@ namespace ProiectII.Repositories
                 .Include(c => c.User)
                 .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
         }
+
+
+        
+
+        public async Task UpdateAsync(Comment comment)
+        {
+            _context.Comments.Update(comment);
+            await _context.SaveChangesAsync();
+        }
+
+
     }
 
 

@@ -24,50 +24,98 @@ namespace ProiectII.Services.CoreDomain
             _mapper = mapper;
         }
 
+        //public async Task<ReportDto> CreateReportAsync(CreateReportDto dto, string? userId)
+        //{
+        //    // 1. Salvarea imaginii pe disc
+        //    string imageUrl = await _fileService.SaveFileAsync(dto.ImageFile, "reports");
+
+        //    try
+        //    {
+        //        // 2. Crearea și salvarea Locației PRIMA DATĂ
+        //        var location = new Location
+        //        {
+        //            Name = "Report Location",
+        //            Coordinate = new Coordinate
+        //            {
+        //                Latitude = (decimal)dto.Latitude,
+        //                Longitude = (decimal)dto.Longitude
+        //            }
+        //        };
+
+
+        //        await _locationRepository.AddAsync(location);
+        //        // CRITIC: Trebuie să salvăm ca să primim location.Id de la MySQL
+        //        await _locationRepository.SaveChangesAsync();
+
+        //        // 3. Crearea Raportului
+        //        var report = _mapper.Map<Report>(dto);
+        //        report.ImageUrl = imageUrl;
+        //        report.LocationId = location.Id; // Acum avem un ID real
+        //        report.ReporterId = userId;
+        //        report.ReportStatus = ReportStatus.Pending;
+        //        report.CreatedAt = DateTime.UtcNow;
+
+        //        await _reportRepository.AddAsync(report);
+        //        // CRITIC: Salvăm raportul în MySQL
+        //        await _reportRepository.SaveChangesAsync();
+
+        //        // Dacă ai o metodă care aduce raportul cu tot cu detalii, o folosești, 
+        //        // altfel returnăm direct maparea pe ce am creat
+        //        return _mapper.Map<ReportDto>(report);
+        //    }
+        //    catch (Exception)
+        //    {
+        //        // Dacă baza de date a crăpat, ștergem poza de pe disc ca să nu ocupe loc degeaba
+        //        _fileService.DeleteFile(imageUrl);
+        //        throw;
+        //    }
+        //}
+
+
         public async Task<ReportDto> CreateReportAsync(CreateReportDto dto, string? userId)
         {
-            // 1. Salvarea imaginii pe disc
+            // 1. Imaginea
             string imageUrl = await _fileService.SaveFileAsync(dto.ImageFile, "reports");
 
-            try
+            // 2. Locația
+            var location = new Location
             {
-                // 2. Crearea și salvarea Locației PRIMA DATĂ
-                var location = new Location
-                {
-                    Name = "Report Location", // Sau string.Empty
-                    Coordinate = new Coordinate(
-                        Latitude: (decimal)dto.Latitude,
-                        Longitude: (decimal)dto.Longitude
-                    )
-                };
+                Name = "Report Location",
+                Coordinate = new Coordinate
+                 {
+                     Latitude = (decimal)dto.Latitude,
+                     Longitude = (decimal)dto.Longitude
+                 }
 
-                await _locationRepository.AddAsync(location);
-                // CRITIC: Trebuie să salvăm ca să primim location.Id de la MySQL
-                await _locationRepository.SaveChangesAsync();
 
-                // 3. Crearea Raportului
-                var report = _mapper.Map<Report>(dto);
-                report.ImageUrl = imageUrl;
-                report.LocationId = location.Id; // Acum avem un ID real
-                report.ReporterId = userId;
-                report.ReportStatus = ReportStatus.Pending;
-                report.CreatedAt = DateTime.UtcNow;
 
-                await _reportRepository.AddAsync(report);
-                // CRITIC: Salvăm raportul în MySQL
-                await _reportRepository.SaveChangesAsync();
+            };
+            await _locationRepository.AddAsync(location);
+            await _locationRepository.SaveChangesAsync(); // Salvăm ca să avem ID-ul locației
 
-                // Dacă ai o metodă care aduce raportul cu tot cu detalii, o folosești, 
-                // altfel returnăm direct maparea pe ce am creat
-                return _mapper.Map<ReportDto>(report);
-            }
-            catch (Exception)
-            {
-                // Dacă baza de date a crăpat, ștergem poza de pe disc ca să nu ocupe loc degeaba
-                _fileService.DeleteFile(imageUrl);
-                throw;
-            }
+            // 3. MAPAREA (Trebuie să fie prima!)
+            // Aceasta curăță obiectul, deci tot ce setăm după ea va rămâne în DB
+            var report = _mapper.Map<Report>(dto);
+
+            // 4. SETĂRILE MANUALE (Trebuie să fie ultimele!)
+            report.ImageUrl = imageUrl;
+            report.LocationId = location.Id;
+            report.ReporterId = userId;
+            report.ReportStatus = ReportStatus.Pending;
+            report.CreatedAt = DateTime.UtcNow;
+
+            // 5. Salvarea Raportului
+            await _reportRepository.AddAsync(report);
+            await _reportRepository.SaveChangesAsync();
+
+            return _mapper.Map<ReportDto>(report);
         }
+
+
+
+
+
+
 
         public async Task<IEnumerable<ReportDto>> GetAllActiveReportsAsync()
         {

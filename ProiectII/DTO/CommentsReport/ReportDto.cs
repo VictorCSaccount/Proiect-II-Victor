@@ -9,7 +9,6 @@
         public string ImageUrl { get; set; } = string.Empty; // adresa imaginii -- salvata local sau pe server( daca in viitor facem pe un azure etc..
         public string StatusName { get; set; } = "Pending"; //il consider dinstart pending.. de vazut daca e bine!!
         public DateTime CreatedAt { get; set; }
-        public DateTime LastUpdatedAt { get; set; }
         public string ReporterName { get; set; }  
     }
 }

@@ -154,6 +154,72 @@ namespace ProiectII.Mappings
 
 
 
+            // ===========================
+            // Commments DTO
+            // ===========================
+            {
+
+                // 1. Maparea de la Entitate la DTO (pentru afișare)
+                CreateMap<Comment, CommentDto>()
+                    .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.UserName))
+                    .ForMember(dest => dest.EditedAt, opt => opt.MapFrom(src => src.UpdatedAt))
+                    .ForMember(dest => dest.IsEdited, opt => opt.MapFrom(src => src.UpdatedAt != null));
+
+                // 2. Maparea de la DTO la Entitate (pentru creare)
+                CreateMap<CreateCommentDto, Comment>()
+                    // Ignorăm tot ce setează baza de date sau Service-ul manual
+                    .ForMember(dest => dest.Id, opt => opt.Ignore())
+                    .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                    .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                    .ForMember(dest => dest.IsVisible, opt => opt.Ignore())
+                    .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                    .ForMember(dest => dest.UserId, opt => opt.Ignore())
+                    .ForMember(dest => dest.User, opt => opt.Ignore())
+                    .ForMember(dest => dest.Fox, opt => opt.Ignore());
+
+
+
+
+
+
+
+
+            }
+
+            //// ===================
+            /// Reports
+            /// =====================
+
+            {
+
+
+
+
+                // 1. De la DTO la Entitate (Creare)
+                CreateMap<CreateReportDto, Report>()
+                    .ForMember(dest => dest.Id, opt => opt.Ignore())
+                    .ForMember(dest => dest.ReporterId, opt => opt.Ignore())
+                    .ForMember(dest => dest.Reporter, opt => opt.Ignore())
+                    .ForMember(dest => dest.LocationId, opt => opt.Ignore())
+                    .ForMember(dest => dest.Location, opt => opt.Ignore())
+                    .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                    .ForMember(dest => dest.ReportStatus, opt => opt.Ignore())
+                    .ForMember(dest => dest.ImageUrl, opt => opt.Ignore());
+                  
+
+                // 2. De la Entitate la DTO (Afișare)
+                CreateMap<Report, ReportDto>()
+                    .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.ReportStatus.ToString()))
+                    .ForMember(dest => dest.ReporterName, opt => opt.MapFrom(src => src.Reporter != null ? src.Reporter.UserName : "Guest"))
+     
+                    .ForMember(dest => dest.Latitude, opt => opt.MapFrom(src => (double)src.Location.Coordinate.Latitude))
+                    .ForMember(dest => dest.Longitude, opt => opt.MapFrom(src => (double)src.Location.Coordinate.Longitude));
+            }
+
+
+
+
+      
 
 
 
