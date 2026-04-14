@@ -18,7 +18,7 @@ public class ReportsController : ControllerBase
     public async Task<IActionResult> Create([FromForm] CreateReportDto dto)
     {
         // Analiză rece: Hardcodăm un UserId de test până faci Auth-ul
-        string testUserId = "user-test-123";
+        string testUserId = "b144d7ba-6ab2-4efd-b81c-5eec01ba039f";
 
         try
         {
