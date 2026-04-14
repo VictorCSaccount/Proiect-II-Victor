@@ -9,6 +9,8 @@ namespace ProiectII.Repositories
     {
         public ReportRepository(ApplicationDbContext context) : base(context) { }
 
+     
+
         public async Task<IEnumerable<Report>> GetAllReportsWithDetailsAsync()
         {
             return await _context.Reports
@@ -17,5 +19,19 @@ namespace ProiectII.Repositories
                 .OrderByDescending(r => r.Id) 
                 .ToListAsync();
         }
+
+
+        public async Task<IEnumerable<Report>> GetAllActiveReportsWithDetailsAsync()
+        {
+
+            return await _context.Reports
+                .Where(r => r.ReportStatus == ReportStatus.Pending)
+                .Include(r => r.Reporter) 
+                .Include(r => r.Location) 
+                .OrderByDescending(r => r.Id) 
+                .ToListAsync();
+        }
+
+
     }
 }

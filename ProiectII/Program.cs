@@ -5,6 +5,8 @@ using ProiectII.Interfaces;
 using ProiectII.Mappings;
 using ProiectII.Models;
 using ProiectII.Repositories;
+using ProiectII.Services.CoreDomain;
+using ProiectII.Services.UtilityServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,6 +44,14 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<ILocationRepository, LocationRepository>();
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
 var app = builder.Build();
 

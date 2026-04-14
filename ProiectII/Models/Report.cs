@@ -29,7 +29,14 @@ namespace ProiectII.Models
         [MaxLength(512)]
         public string? ImageUrl { get; set; }
 
+        [Required]
+        public DateTime CreatedAt { get; set; }
+
         public ReportStatus ReportStatus { get; set; } = ReportStatus.Pending;
+
+
+        
+        
 
         public void Resolve()
         {

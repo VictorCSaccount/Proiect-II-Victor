@@ -18,7 +18,7 @@ namespace ProiectII.Models
         
 
         // sometimes the coordinates of the foxes are not exact, so we can use this property to define a radius around the coordinates, in which the fox is located. This is useful for the cases when we have only approximate coordinates for the foxes, or when we want to show a general area where the fox is located, instead of a specific point on the map.
-        public double PrecisionRadius { get; set; } // precision in meters , defines the area/circle on the map
+        public double? PrecisionRadius { get; set; } // precision in meters , defines the area/circle on the map
 
 
         public double GetDistanceTo(Location otherLocation)
