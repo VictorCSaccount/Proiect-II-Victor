@@ -96,10 +96,18 @@ namespace ProiectII.Services.SecurityIdentity
                 return new MessageDto { IsSuccess = true, Message = "Cont creat cu succes!" };
             }
 
-            // ==================================================
-            // METODĂ PRIVATĂ: Generarea "Buletinului" (JWT)
-            // ==================================================
-            private async Task<string> GenerateJwtToken(ApplicationUser user)
+
+        // verificare login
+        public async Task<bool> IsUserActiveAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            return user != null && user.IsActive;
+        }
+
+        // ==================================================
+        // Generare cheie (JWT)
+        // ==================================================
+        private async Task<string> GenerateJwtToken(ApplicationUser user)
             {
                 var userRoles = await _userManager.GetRolesAsync(user);
                 var authClaims = new List<Claim>
@@ -116,16 +124,18 @@ namespace ProiectII.Services.SecurityIdentity
                     authClaims.Add(new Claim(ClaimTypes.Role, userRole));
                 }
 
-                // Cheia secretă pe care doar serverul tău o știe
-                var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]!));
+            var secret = _configuration["Jwt:Secret"];
+                var issuer = _configuration["Jwt:Issuer"];
+                var audience = _configuration["Jwt:Audience"];
+
+                var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret!));
 
                 var token = new JwtSecurityToken(
-                    issuer: _configuration["JWT:ValidIssuer"],
-                    audience: _configuration["JWT:ValidAudience"],
+                    issuer: issuer,
+                    audience: audience,
                     expires: DateTime.UtcNow.AddHours(2),
                     claims: authClaims,
-                    signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
-                );
+                    signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256));
 
                 return new JwtSecurityTokenHandler().WriteToken(token);
             }
