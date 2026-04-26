@@ -53,6 +53,10 @@ builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepositor
 //serviciu  pentru automapper!!!
 
 
+// se intregistreaza serviicul de email extern
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+
 
 //builder.Services.AddAuthentication(options =>
 //{
@@ -354,9 +358,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-// OBLIGATORIU: Ordinea contează!
-app.UseAuthentication(); // Cine ești?
-app.UseAuthorization();  // Ce ai voie să faci?
+app.UseAuthentication();
+app.UseAuthorization();  
 
 app.MapControllers();
 app.MapControllerRoute(

@@ -27,6 +27,7 @@ services:
     ports:
       - "7033:8080"
     environment:
+     - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=db;Port=3306;Database=FoxShelterDB;Uid=root;Pwd=RootPassword123!;
       - Jwt__Secret=FoxShelter_Cheie_Super_Secreta_Si_Lunga_2026!
       - Jwt__Issuer=FoxShelterAPI

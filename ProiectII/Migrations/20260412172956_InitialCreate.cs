@@ -100,7 +100,7 @@ namespace ProiectII.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Statuses",
+                name: "Stat",
                 columns: table => new
                 {
                     Id = table.Column<uint>(type: "int unsigned", nullable: false)

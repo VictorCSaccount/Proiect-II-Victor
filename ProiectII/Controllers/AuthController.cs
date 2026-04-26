@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using ProiectII.DTO;
 using ProiectII.DTO.AuthAccount;
 using ProiectII.Interfaces;
+using ProiectII.Models;
 
 namespace ProiectII.Controllers
 {
@@ -11,6 +13,8 @@ namespace ProiectII.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IEmailService _emailService;
 
         public AuthController(IAuthService authService)
         {
@@ -99,5 +103,66 @@ namespace ProiectII.Controllers
 
             return Ok(new { Message = "Delogat cu succes. Sesiunea a fost închisă." });
         }
+
+
+
+        public AuthController(UserManager<ApplicationUser> userManager, IEmailService emailService)
+        {
+            _userManager = userManager;
+            _emailService = emailService;
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+
+            if (user == null)
+            {
+                return Ok(new { message = "Instrucțiunile au fost trimise." });
+            }
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            await _emailService.SendEmailAsync(
+                user.Email,
+                "Resetare Parolă",
+                $"Codul tău de securitate este: {token}"
+            );
+
+            return Ok(new { message = "Instrucțiunile au fost trimise." });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            // 1. Căutăm utilizatorul după email
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+
+            // Regula de securitate: Nu dăm detalii specifice dacă userul nu există, 
+            // dar aici, fiind un pas de resetare, returnăm eroare generică de cerere invalidă.
+            if (user == null)
+            {
+                return BadRequest(new { message = "Cerere de resetare invalidă." });
+            }
+
+            // 2. Utilizăm UserManager pentru a valida token-ul și a schimba parola.
+            // ResetPasswordAsync face automat:
+            // - Validarea token-ului (dacă a expirat sau dacă a fost deja folosit)
+            // - Hash-uirea noii parole folosind algoritmul securizat (PBKDF2)
+            // - Salvarea în baza de date
+            var result = await _userManager.ResetPasswordAsync(user, dto.Token, dto.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                // Extragem descrierile erorilor (ex: parola prea scurtă, token invalid etc.)
+                var errors = result.Errors.Select(e => e.Description);
+                return BadRequest(new { message = "Eroare la resetarea parolei.", errors });
+            }
+
+            return Ok(new { message = "Parola a fost actualizată cu succes. Te poți loga." });
+        }
+
+
     }
 }
