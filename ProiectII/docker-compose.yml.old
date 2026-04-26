@@ -1,6 +1,8 @@
+version: '3.8'
+
 services:
   db:
-    image: mariadb:10.11
+    image: mysql:8.0
     container_name: fox_shelter_db
     restart: always
     environment:
@@ -10,11 +12,6 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
 
   api:
     build:
@@ -22,15 +19,14 @@ services:
       dockerfile: Dockerfile
     container_name: fox_shelter_api
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     ports:
-      - "7033:8080"
+      - "8080:8080"
     environment:
       - ConnectionStrings__DefaultConnection=Server=db;Port=3306;Database=FoxShelterDB;Uid=root;Pwd=RootPassword123!;
-      - Jwt__Secret=FoxShelter_Cheie_Super_Secreta_Si_Lunga_2026!
-      - Jwt__Issuer=FoxShelterAPI
-      - Jwt__Audience=FoxShelterFrontend
+      - JWT__Secret=FoxShelter_Cheie_Super_Secreta_Si_Lunga_2026!
+      - JWT__ValidIssuer=http://localhost:8080
+      - JWT__ValidAudience=http://localhost:8080
 
 volumes:
   db_data:
