@@ -1,11 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
-using ProiectII.Interfaces;
-
+﻿using ProiectII.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace ProiectII.Services.UtilityServices
-
 {
-
     public class EmailService : IEmailService
     {
         private readonly ILogger<EmailService> _logger;
@@ -15,19 +12,17 @@ namespace ProiectII.Services.UtilityServices
             _logger = logger;
         }
 
-        Task<bool> IEmailService.SendEmailAsync(string toEmail, string subject, string body)
-                    {
-            _logger.LogInformation("================================================================");
-            _logger.LogInformation("OUTGOING EMAIL SYSTEM | Status: SIMULATED_SEND");
-            _logger.LogInformation("To: {Email}", toEmail);
-            _logger.LogInformation("Subject: {Subject}", subject);
-            _logger.LogInformation("Content: {Body}", body);
-            _logger.LogInformation("================================================================");
+        public Task<bool> SendEmailAsync(string toEmail, string subject, string body)
+        {
+            _logger.LogWarning("================================================================");
+            _logger.LogWarning("OUTGOING EMAIL SYSTEM | Status: SIMULATED_SEND");
+            _logger.LogWarning("To: {Email}", toEmail);
+            _logger.LogWarning("Subject: {Subject}", subject);
+            _logger.LogWarning("Content: {Body}", body);
+            _logger.LogWarning("================================================================");
 
-            return (Task<bool>)Task.CompletedTask;
+
+            return Task.FromResult(true);
         }
     }
-
-
-
 }
