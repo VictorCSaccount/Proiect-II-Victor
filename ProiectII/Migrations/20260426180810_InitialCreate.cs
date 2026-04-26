@@ -91,7 +91,7 @@ namespace ProiectII.Migrations
                     Latitude = table.Column<decimal>(type: "decimal(18,10)", precision: 18, scale: 10, nullable: false),
                     Longitude = table.Column<decimal>(type: "decimal(18,10)", precision: 18, scale: 10, nullable: false),
                     Altitude = table.Column<decimal>(type: "decimal(18,10)", precision: 18, scale: 10, nullable: true),
-                    PrecisionRadius = table.Column<double>(type: "double", nullable: false)
+                    PrecisionRadius = table.Column<double>(type: "double", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -100,7 +100,7 @@ namespace ProiectII.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Stat",
+                name: "Statuses",
                 columns: table => new
                 {
                     Id = table.Column<uint>(type: "int unsigned", nullable: false)
@@ -298,39 +298,6 @@ namespace ProiectII.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Reports",
-                columns: table => new
-                {
-                    Id = table.Column<uint>(type: "int unsigned", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    Description = table.Column<string>(type: "text", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ReporterId = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LocationId = table.Column<uint>(type: "int unsigned", nullable: false),
-                    ImageUrl = table.Column<string>(type: "varchar(512)", maxLength: 512, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ReportStatus = table.Column<uint>(type: "int unsigned", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Reports", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Reports_AspNetUsers_ReporterId",
-                        column: x => x.ReporterId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Reports_Locations_LocationId",
-                        column: x => x.LocationId,
-                        principalTable: "Locations",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
                 name: "EnclosurePoints",
                 columns: table => new
                 {
@@ -416,6 +383,8 @@ namespace ProiectII.Migrations
                     AdoptionStatus = table.Column<uint>(type: "int unsigned", nullable: false),
                     RequestDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     Reason = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AdminComment = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
@@ -446,6 +415,7 @@ namespace ProiectII.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    IsVisible = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     UserId = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     FoxId = table.Column<uint>(type: "int unsigned", nullable: false),
@@ -464,6 +434,46 @@ namespace ProiectII.Migrations
                         name: "FK_Comments_Foxes_FoxId",
                         column: x => x.FoxId,
                         principalTable: "Foxes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Reports",
+                columns: table => new
+                {
+                    Id = table.Column<uint>(type: "int unsigned", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Description = table.Column<string>(type: "text", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ReporterId = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LocationId = table.Column<uint>(type: "int unsigned", nullable: false),
+                    ImageUrl = table.Column<string>(type: "varchar(512)", maxLength: 512, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    ReportStatus = table.Column<uint>(type: "int unsigned", nullable: false),
+                    FoxId = table.Column<uint>(type: "int unsigned", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Reports", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Reports_AspNetUsers_ReporterId",
+                        column: x => x.ReporterId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Reports_Foxes_FoxId",
+                        column: x => x.FoxId,
+                        principalTable: "Foxes",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Reports_Locations_LocationId",
+                        column: x => x.LocationId,
+                        principalTable: "Locations",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -560,6 +570,11 @@ namespace ProiectII.Migrations
                 name: "IX_Foxes_StatusId",
                 table: "Foxes",
                 column: "StatusId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Reports_FoxId",
+                table: "Reports",
+                column: "FoxId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Reports_LocationId",

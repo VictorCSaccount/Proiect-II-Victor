@@ -12,15 +12,15 @@ using ProiectII.Data;
 namespace ProiectII.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260414110625_AddIsVisibleToComments")]
-    partial class AddIsVisibleToComments
+    [Migration("20260426180810_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.2")
+                .HasAnnotation("ProductVersion", "8.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
@@ -457,7 +457,7 @@ namespace ProiectII.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
-                    b.Property<double>("PrecisionRadius")
+                    b.Property<double?>("PrecisionRadius")
                         .HasColumnType("double");
 
                     b.HasKey("Id");
@@ -472,6 +472,9 @@ namespace ProiectII.Migrations
                         .HasColumnType("int unsigned");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<uint>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -565,7 +568,7 @@ namespace ProiectII.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Statuses");
+                    b.ToTable("Statuses", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

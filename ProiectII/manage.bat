@@ -41,11 +41,18 @@ docker-compose down -v
 GOTO MENU
 
 :MIGRATE
-ECHO [INFO] Aplicare migrari...
-:: Rulezi migrarea local, dar ATENTIE: appsettings.json trebuie sa aiba localhost!
-:: Daca vrei sa fii PRO, facem migrarea din interiorul containerului:
+ECHO [INFO] Stergere migrari vechi si generare migrare curata...
+:: Stergem folderul daca exista ca sa nu avem conflicte
+if exist "Migrations" rmdir /s /q "Migrations"
+
+:: 1. Cream migrarea proaspata (se uita la codul tau cu Statuses)
+dotnet ef migrations add InitialCreate
+
+ECHO [INFO] Aplicare migrari pe MariaDB (Localhost)...
+:: 2. Impingem tabelele in baza de date din Docker
 dotnet ef database update
-ECHO [OK] Gata! Aplicatia e la http://localhost:7033 (sau portul tau)
+
+ECHO [OK] Tabelele au fost create! Verifica in MariaDB cu 'show tables;'
 GOTO MENU
 
 :LOGS

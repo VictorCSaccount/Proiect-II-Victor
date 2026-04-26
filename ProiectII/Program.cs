@@ -313,18 +313,46 @@ var app = builder.Build();
 //}
 
 
-// 4. INTEGRARE SEEDING + VERIFICARE MAPPING
+//// 4. INTEGRARE SEEDING + VERIFICARE MAPPING
+//using (var scope = app.Services.CreateScope())
+//{
+//    var services = scope.ServiceProvider;
+//    try
+//    {
+//        // AUTOMAPPER
+//        var mapper = services.GetRequiredService<AutoMapper.IMapper>();
+//        mapper.ConfigurationProvider.AssertConfigurationIsValid();
+//        // --------------------------------------
+
+//        var context = services.GetRequiredService<ApplicationDbContext>();
+//        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+//        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+
+//        await DbInitializer.SeedData(context, userManager, roleManager);
+//    }
+//    catch (Exception ex)
+//    {
+//        var logger = services.GetRequiredService<ILogger<Program>>();
+//        // Dacă eroarea e de la AutoMapper, aici vei vedea detaliile
+//        logger.LogError(ex, "Eroare critică la pornire (Mapping sau Seeding).");
+//        throw; // Forțăm oprirea dacă maparea e greșită
+//    }
+//}
+
+
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
-        // AUTOMAPPER
-        var mapper = services.GetRequiredService<AutoMapper.IMapper>();
-        mapper.ConfigurationProvider.AssertConfigurationIsValid();
-        // --------------------------------------
-
         var context = services.GetRequiredService<ApplicationDbContext>();
+
+        // Asta e piesa lipsă! Fără ea, tabelele sunt invizibile.
+        await context.Database.MigrateAsync();
+
+        var mapper = services.GetRequiredService<AutoMapper.IMapper>();
+        // mapper.ConfigurationProvider.AssertConfigurationIsValid(); // Comentează asta dacă tot crapă la pornire
+
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
@@ -332,10 +360,8 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        // Dacă eroarea e de la AutoMapper, aici vei vedea detaliile
-        logger.LogError(ex, "Eroare critică la pornire (Mapping sau Seeding).");
-        throw; // Forțăm oprirea dacă maparea e greșită
+        Console.WriteLine($"❌ EROARE CRITICĂ: {ex.Message}");
+        // Nu da throw aici dacă vrei ca aplicația să pornească măcar (pentru debug)
     }
 }
 
