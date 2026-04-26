@@ -86,5 +86,33 @@ namespace ProiectII.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+
+        [HttpGet("profile")]
+        public async Task<ActionResult<UserDto>> GetMyProfile()
+        {
+   
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null) return NotFound("Utilizatorul nu mai există în sistem.");
+
+            var response = new UserDto
+            {
+                Id = user.Id,
+                Email = user.Email,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                BirthDate = user.BornDate,
+                ProfilePictureUrl = user.ProfilePictureUrl
+            };
+
+            return Ok(response);
+        }
+
+
     }
 }
