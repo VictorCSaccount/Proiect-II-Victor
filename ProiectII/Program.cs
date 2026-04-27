@@ -228,7 +228,7 @@ builder.Services.AddAuthentication(options =>
         },
         OnAuthenticationFailed = context =>
         {
-            Console.WriteLine($"🚨 EROARE DE VALIDARE: {context.Exception.Message}");
+            Console.WriteLine($"EROARE DE VALIDARE: {context.Exception.Message}");
             return Task.CompletedTask;
         }
     };
@@ -292,39 +292,26 @@ builder.Services.AddScoped<IReportService, ReportService>();
 
 var app = builder.Build();
 
-// 4. INTEGRARE SEEDING (Rulează o singură dată la pornire)
+// permite formward al pagina -- pentru atrece prin https
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
+
+
 //using (var scope = app.Services.CreateScope())
 //{
 //    var services = scope.ServiceProvider;
 //    try
 //    {
 //        var context = services.GetRequiredService<ApplicationDbContext>();
-//        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-//        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-//        // Apelăm DbInitializer asincron
-//        await DbInitializer.SeedData(context, userManager, roleManager);
-//    }
-//    catch (Exception ex)
-//    {
-//        var logger = services.GetRequiredService<ILogger<Program>>();
-//        logger.LogError(ex, "A apărut o eroare la popularea bazei de date.");
-//    }
-//}
+//        // Asta e piesa lipsă! Fără ea, tabelele sunt invizibile.
+//        await context.Database.MigrateAsync();
 
-
-//// 4. INTEGRARE SEEDING + VERIFICARE MAPPING
-//using (var scope = app.Services.CreateScope())
-//{
-//    var services = scope.ServiceProvider;
-//    try
-//    {
-//        // AUTOMAPPER
 //        var mapper = services.GetRequiredService<AutoMapper.IMapper>();
-//        mapper.ConfigurationProvider.AssertConfigurationIsValid();
-//        // --------------------------------------
+//        // mapper.ConfigurationProvider.AssertConfigurationIsValid(); // Comentează asta dacă tot crapă la pornire
 
-//        var context = services.GetRequiredService<ApplicationDbContext>();
 //        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
 //        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
@@ -332,39 +319,50 @@ var app = builder.Build();
 //    }
 //    catch (Exception ex)
 //    {
-//        var logger = services.GetRequiredService<ILogger<Program>>();
-//        // Dacă eroarea e de la AutoMapper, aici vei vedea detaliile
-//        logger.LogError(ex, "Eroare critică la pornire (Mapping sau Seeding).");
-//        throw; // Forțăm oprirea dacă maparea e greșită
+//        Console.WriteLine($"eroare critica: {ex.Message}");
+//        // Nu da throw aici dacă vrei ca aplicația să pornească măcar (pentru debug)
 //    }
 //}
-
 
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    try
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+
+    int retries = 10;
+    bool dbReady = false;
+
+    while (!dbReady && retries > 0)
     {
-        var context = services.GetRequiredService<ApplicationDbContext>();
+        try
+        {
+            logger.LogInformation($"Incercare conectare la DB... (Rămase: {retries})");
 
-        // Asta e piesa lipsă! Fără ea, tabelele sunt invizibile.
-        await context.Database.MigrateAsync();
+            // 1. Aplicăm migrările (creăm tabelele)
+            await context.Database.MigrateAsync();
 
-        var mapper = services.GetRequiredService<AutoMapper.IMapper>();
-        // mapper.ConfigurationProvider.AssertConfigurationIsValid(); // Comentează asta dacă tot crapă la pornire
+            // 2. Rulăm seeding-ul
+            await DbInitializer.SeedData(context, userManager, roleManager);
 
-        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-
-        await DbInitializer.SeedData(context, userManager, roleManager);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"❌ EROARE CRITICĂ: {ex.Message}");
-        // Nu da throw aici dacă vrei ca aplicația să pornească măcar (pentru debug)
+            dbReady = true;
+            logger.LogInformation("Succes: Baza de date este populată!");
+        }
+        catch (Exception ex)
+        {
+            retries--;
+            logger.LogWarning($"DB nu e gata încă. Eroare: {ex.Message}");
+            if (retries == 0)
+            {
+                logger.LogCritical("Eșec total după 10 încercări.");
+                throw;
+            }
+            await Task.Delay(5000); // Așteptăm 5 secunde înainte de reîncercare
+        }
     }
 }
-
 
 
 

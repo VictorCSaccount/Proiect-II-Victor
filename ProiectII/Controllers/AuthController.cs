@@ -30,15 +30,29 @@ public class AuthController : ControllerBase
         var authResponse = await _authService.LoginAsync(dto);
         if (authResponse == null) return Unauthorized(new { Message = "Date incorecte." });
 
+        //var cookieOptions = new CookieOptions
+        //{
+        //    HttpOnly = true,
+        //    Secure = true,
+        //    SameSite = SameSiteMode.Strict,
+        //    Path = "/"
+        //};
+
+        //Response.Cookies.Append("jwt_access_token", authResponse.Token, cookieOptions);
+
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
+            Secure = true,           // OBLIGATORIU avem HTTPS
+            SameSite = SameSiteMode.None, // Necesar pentru Cross-Origin între porturi diferite
+            Expires = DateTime.UtcNow.AddDays(7),
             Path = "/"
         };
-
         Response.Cookies.Append("jwt_access_token", authResponse.Token, cookieOptions);
+
+
+
+
         return Ok(new { authResponse.UserRole, Message = "Logat cu succes." });
     }
 

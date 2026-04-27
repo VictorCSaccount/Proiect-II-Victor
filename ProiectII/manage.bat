@@ -36,8 +36,14 @@ docker-compose stop
 GOTO MENU
 
 :RESET
-ECHO [AVERTISMENT] Stergere totala date si containere...
+ECHO [AVERTISMENT] Stergere totala date, containere si migrari...
 docker-compose down -v
+
+:: Șterge folderul Migrations și tot ce e în el (/s) fără să ceară confirmare (/q)
+:: Asigură-te că ești în folderul unde se află folderul Migrations
+rmdir /s /q "Migrations"
+
+ECHO [INFO] Totul a fost curatat. Poti genera o migrare noua.
 GOTO MENU
 
 :MIGRATE
