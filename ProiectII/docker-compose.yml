@@ -25,7 +25,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=db;Port=3306;Database=FoxShelterDB;Uid=root;Pwd=RootPassword123!;
-      - Jwt__Secret=FoxShelter_Cheie_Super_Secreta_Si_Lunga_2026!
+      - Jwt__Secret=Cheie_Ultra_Secreta_Si_Foarte_Lunga_De_Minim_64_Caractere_Asigura_Te_Ca_E_Lunga!!!
       - ASPNETCORE_URLS=http://+:8080
 
   proxy:
