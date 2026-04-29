@@ -1,33 +1,40 @@
 @echo off
+cd /d "%~dp0"
 CLS
 :MENU
 ECHO.
 ECHO ==========================================
-echo    FOX SHELTER - Docker Control Panel 2026
+ECHO    FOX SHELTER - Docker Control Panel 2026
 ECHO ==========================================
-ECHO 1. START (Build + Up + Migrate)
+ECHO 1. START (Build in Docker + Up + Migrate)
 ECHO 2. STOP (Down)
-ECHO 3. RESET TOTAL (Sterge DATE + Containere)
-ECHO 4. LOGS (Vezi ce erori are API-ul)
+ECHO 3. RESET TOTAL (Sterge DATE + BIN/OBJ + Migrari)
+ECHO 4. LOGS (API)
 ECHO 5. OPEN MYSQL CLI
 ECHO 6. EXIT
 ECHO ==========================================
 SET /P M=Alege o optiune (1-6): 
 
-IF %M%==1 GOTO START
-IF %M%==2 GOTO STOP
-IF %M%==3 GOTO RESET
-IF %M%==4 GOTO LOGS
-IF %M%==5 GOTO MYSQL
-IF %M%==6 GOTO EXIT
+IF "%M%"=="1" GOTO START
+IF "%M%"=="2" GOTO STOP
+IF "%M%"=="3" GOTO RESET
+IF "%M%"=="4" GOTO LOGS
+IF "%M%"=="5" GOTO MYSQL
+IF "%M%"=="6" GOTO EXIT
 
 :START
-ECHO [INFO] Pornire containere si Rebuild...
-:: Adaugam --build ca sa fim siguri ca noul tau cod e compilat in container
+ECHO [INFO] Reconstructie imagini si pornire...
 docker-compose up -d --build
-ECHO [WAIT] Asteptare pornire MySQL (12 secunde)...
-timeout /t 12 /nobreak
-:: Chemam migrarea, dar acum o facem DESTEPT
+
+:: Verificam obiectiv daca comanda precedenta a dat eroare (Exit Code diferit de 0)
+IF %ERRORLEVEL% NEQ 0 (
+    ECHO.
+    ECHO [EROARE CRITICA] Docker Build a esuat. Ne oprim aici pentru a nu corupe mediul.
+    GOTO MENU
+)
+
+ECHO [WAIT] Asteptare pornire MariaDB (15 secunde)...
+timeout /t 15 /nobreak
 GOTO MIGRATE
 
 :STOP
@@ -36,29 +43,27 @@ docker-compose stop
 GOTO MENU
 
 :RESET
-ECHO [AVERTISMENT] Stergere totala date, containere si migrari...
+ECHO [AVERTISMENT] Stergere totala...
 docker-compose down -v
-
-:: Șterge folderul Migrations și tot ce e în el (/s) fără să ceară confirmare (/q)
-:: Asigură-te că ești în folderul unde se află folderul Migrations
-rmdir /s /q "Migrations"
-
-ECHO [INFO] Totul a fost curatat. Poti genera o migrare noua.
+ECHO [INFO] Curatare mizerie locala (bin, obj, Migrations)...
+if exist "Migrations" rmdir /s /q "Migrations"
+if exist "bin" rmdir /s /q "bin"
+if exist "obj" rmdir /s /q "obj"
+ECHO [OK] Totul a fost curatat.
 GOTO MENU
 
 :MIGRATE
-ECHO [INFO] Stergere migrari vechi si generare migrare curata...
-:: Stergem folderul daca exista ca sa nu avem conflicte
-if exist "Migrations" rmdir /s /q "Migrations"
-
-:: 1. Cream migrarea proaspata (se uita la codul tau cu Statuses)
+ECHO [INFO] Generare migrare proaspata...
+dotnet build
 dotnet ef migrations add InitialCreate
-
-ECHO [INFO] Aplicare migrari pe MariaDB (Localhost)...
-:: 2. Impingem tabelele in baza de date din Docker
+ECHO [INFO] Aplicare migrari pe MariaDB...
 dotnet ef database update
 
-ECHO [OK] Tabelele au fost create! Verifica in MariaDB cu 'show tables;'
+:: LINIILE NOI: Curatam bin si obj local imediat dupa migrare, ca sa nu incurce Docker-ul la urmatorul START
+IF EXIST "bin" rmdir /s /q "bin"
+IF EXIST "obj" rmdir /s /q "obj"
+
+ECHO [OK] Baza de date este gata!
 GOTO MENU
 
 :LOGS
@@ -66,7 +71,6 @@ docker logs -f fox_shelter_api
 GOTO MENU
 
 :MYSQL
-ECHO [INFO] Deschid MySQL CLI in container...
 docker exec -it fox_shelter_db mysql -u root -pRootPassword123! -D FoxShelterDB
 GOTO MENU
 
