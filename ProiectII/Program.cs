@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.HttpOverrides;
 using ProiectII.Data;
 using ProiectII.Interfaces;
 using ProiectII.Mappings;
@@ -16,17 +17,17 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-// Această linie forțează serverul să îți arate parola sau textul exact care provoacă eroarea
+
+// Afiseaza erorile detaliate pentru Identity
 Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII = true;
 
-
-
-// 1. Conexiunea la MySQL
+// ==========================================
+// 1. BAZA DE DATE & IDENTITY
+// ==========================================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
-// 2. OBLIGATORIU: Serviciile de Identity (Fără asta, Seeding-ul nu merge!)
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => {
     options.Password.RequireDigit = true;
     options.Password.RequiredLength = 8;
@@ -35,59 +36,28 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => {
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
-
-// 1. Înregistrează serviciul de token (uzina de bilet)
+// ==========================================
+// 2. DEPENDENCY INJECTION (Servicii & Repo)
+// ==========================================
 builder.Services.AddScoped<ITokenService, TokenService>();
-
-// 2. Înregistrează serviciul de auth (logica de login/register)
 builder.Services.AddScoped<IAuthService, AuthService>();
-
-
 builder.Services.AddScoped<IFoxRepository, FoxRepository>();
 builder.Services.AddScoped<IAdoptionRepository, AdoptionRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IEnclosureRepository, EnclosureRepository>();
-
-// Înregistrarea generică - syntaxa e specială pentru că avem <T>
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-//serviciu  pentru automapper!!!
-
-
-// se intregistreaza serviicul de email extern
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 
-
-//builder.Services.AddAuthentication(options =>
-//{
-//    // Setăm JWT ca schemă implicită pentru a evita eroarea 500 (No authenticationScheme specified)
-//    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-//    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-//    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-//})
-//.AddJwtBearer(options =>
-//{
-//    options.TokenValidationParameters = new TokenValidationParameters
-//    {
-//        ValidateIssuer = true,
-//        ValidateAudience = true,
-//        ValidateLifetime = true,
-//        ValidateIssuerSigningKey = true,
-//        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-//        ValidAudience = builder.Configuration["Jwt:Audience"],
-//        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]!))
-//    };
-
-//    options.Events = new JwtBearerEvents
-//    {
-//        OnMessageReceived = context =>
-//        {
-//            context.Token = context.Request.Cookies["jwt_access_token"];
-//            return Task.CompletedTask;
-//        }
-//    };
-//});
-
+// ==========================================
+// 3. AUTENTIFICARE JWT (Cu extragere din Cookie)
+// ==========================================
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -95,11 +65,10 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    // Acestea sunt setările tale normale pentru validarea token-ului
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"])),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]!)),
         ValidateIssuer = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidateAudience = true,
@@ -108,153 +77,54 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero
     };
 
-
-    //options.Events = new JwtBearerEvents
-    //{
-    //    OnMessageReceived = context =>
-    //    {
-    //        // Extragem cookie-ul creat la login
-    //        var token = context.Request.Cookies["jwt_access_token"];
-
-    //        // Dacă există, îl dăm mai departe middleware-ului pentru validare
-    //        if (!string.IsNullOrEmpty(token))
-    //        {
-    //            context.Token = token;
-    //        }
-
-    //        return Task.CompletedTask;
-    //    }
-    //};
-
-    //options.Events = new JwtBearerEvents
-    //{
-    //    OnMessageReceived = context =>
-    //    {
-    //        var token = context.Request.Cookies["jwt_access_token"];
-    //        if (!string.IsNullOrEmpty(token))
-    //        {
-    //            context.Token = token;
-    //        }
-    //        return Task.CompletedTask;
-    //    },
-    //    // AICI ESTE DETECTORUL DE MINCIUNI
-    //    OnAuthenticationFailed = context =>
-    //    {
-    //        Console.WriteLine("\n==========================================");
-    //        Console.WriteLine("🚨 MOTIVUL EXACT AL RESPINGERII JWT:");
-    //        Console.WriteLine(context.Exception.Message);
-    //        Console.WriteLine("==========================================\n");
-    //        return Task.CompletedTask;
-    //    }
-    //};
-
-
-    //options.Events = new JwtBearerEvents
-    //{
-    //    OnMessageReceived = context =>
-    //    {
-    //        var token = context.Request.Cookies["jwt_access_token"];
-
-    //        // 1. VEDEM EXACT CE E ÎN COOKIE ÎNAINTE DE CURĂȚARE
-    //        Console.WriteLine($"\n==========================================");
-    //        Console.WriteLine($"🚨 [DEBUG] Token brut scos din Cookie: '{token}'");
-    //        Console.WriteLine($"==========================================\n");
-
-    //        if (!string.IsNullOrEmpty(token))
-    //        {
-    //            // 2. CURĂȚĂM GUNOIUL (eliminăm ghilimelele, spațiile sau prefixul Bearer)
-    //            token = token.Replace("Bearer ", "").Trim('"').Trim();
-
-    //            context.Token = token;
-    //        }
-
-    //        return Task.CompletedTask;
-    //    },
-    //    OnAuthenticationFailed = context =>
-    //    {
-    //        Console.WriteLine("\n🚨 MOTIVUL RESPINGERII:");
-    //        Console.WriteLine(context.Exception.Message);
-    //        return Task.CompletedTask;
-    //    }
-    //};
-
-
-    //options.Events = new JwtBearerEvents
-    //{
-    //    OnMessageReceived = context =>
-    //    {
-    //        // 1. Tăiem forțat orice Header invalid trimis din greșeală de Swagger
-    //        context.Request.Headers.Remove("Authorization");
-
-    //        // 2. Luăm biletul doar din seiful nostru
-    //        var token = context.Request.Cookies["jwt_access_token"];
-
-    //        if (!string.IsNullOrEmpty(token))
-    //        {
-    //            context.Token = token.Replace("Bearer ", "").Trim('"').Trim();
-    //        }
-
-    //        return Task.CompletedTask;
-    //    },
-    //    OnAuthenticationFailed = context =>
-    //    {
-    //        Console.WriteLine("\n🚨 MOTIVUL EXACT AL RESPINGERII:");
-    //        Console.WriteLine(context.Exception.Message);
-    //        return Task.CompletedTask;
-    //    }
-    //};
     options.Events = new JwtBearerEvents
     {
         OnMessageReceived = context =>
         {
-            // Luăm biletul din Cookie
             var token = context.Request.Cookies["jwt_access_token"];
+            Console.WriteLine($"\n[DEBUG] Ce a venit pe teava din Cookie: '{token}'");
 
-            Console.WriteLine($"\n[DEBUG] Ce a venit pe teava: '{token}'");
-
-            // Filtrul Antiglonț: E null? E gol? Are cuvântul 'undefined'? Nu are puncte?
             if (!string.IsNullOrWhiteSpace(token) && token.Contains('.') && token != "undefined")
             {
-                // Curățăm și îl dăm mai departe doar dacă trece testul
                 context.Token = token.Replace("Bearer ", "").Trim('"').Trim();
                 Console.WriteLine("[DEBUG] Token acceptat si trimis la validare.");
             }
             else
             {
-                Console.WriteLine("[DEBUG] Token respins la vama (format invalid).");
+                Console.WriteLine("[DEBUG] Token respins la vama (format invalid sau lipsa).");
             }
-
             return Task.CompletedTask;
         },
         OnAuthenticationFailed = context =>
         {
-            Console.WriteLine($"EROARE DE VALIDARE: {context.Exception.Message}");
+            Console.WriteLine($"[EROARE DE VALIDARE JWT]: {context.Exception.Message}");
             return Task.CompletedTask;
         }
     };
-
-
-
-
 });
 
+// ==========================================
+// 4. CONFIGURARE CORS PENTRU FRONTEND
+// ==========================================
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendPolicy", policy =>
+    {
+        policy.WithOrigins("https://localhost:7033")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials(); // Critic pentru a permite Cookie-urile intre porturi
+    });
+});
 
-
-
-
-
-
-builder.Services.AddAutoMapper(typeof(MappingProfile));
-
-
-// 3. Servicii pentru API și Swagger (PĂSTREAZĂ-LE, sunt utile pentru testat)
+// ==========================================
+// 5. SWAGGER & API CONTROLLERS
+// ==========================================
 builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "Proiect II API", Version = "v1" });
-
-    // 1. Definim schema de securitate
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -264,66 +134,35 @@ builder.Services.AddSwaggerGen(options =>
         In = ParameterLocation.Header,
         Description = "Introdu token-ul JWT (fără cuvântul Bearer în față)."
     });
-
-    // 2. Cerem Swagger-ului să trimită token-ul la fiecare cerere
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
             },
-            new string[] {}
+            Array.Empty<string>()
         }
     });
 });
 
-
-builder.Services.AddScoped<IFileStorageService, FileStorageService>();
-builder.Services.AddScoped<ICommentRepository, CommentRepository>();
-builder.Services.AddScoped<ICommentService, CommentService>();
-builder.Services.AddScoped<ILocationRepository, LocationRepository>();
-builder.Services.AddScoped<IReportRepository, ReportRepository>();
-builder.Services.AddScoped<IReportService, ReportService>();
+// ==========================================
+// ==========================================
+// BUILDER END - INCEPE CONFIGURAREA PIPELINE-ULUI
+// ==========================================
+// ==========================================
 
 var app = builder.Build();
 
-// permite formward al pagina -- pentru atrece prin https
+// Permite Forward Headers pentru Nginx (HTTPS Termination)
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
-    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+    ForwardedHeaders = ForwardedHeaders.XForwardedProto
 });
 
-
-//using (var scope = app.Services.CreateScope())
-//{
-//    var services = scope.ServiceProvider;
-//    try
-//    {
-//        var context = services.GetRequiredService<ApplicationDbContext>();
-
-//        // Asta e piesa lipsă! Fără ea, tabelele sunt invizibile.
-//        await context.Database.MigrateAsync();
-
-//        var mapper = services.GetRequiredService<AutoMapper.IMapper>();
-//        // mapper.ConfigurationProvider.AssertConfigurationIsValid(); // Comentează asta dacă tot crapă la pornire
-
-//        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-//        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-
-//        await DbInitializer.SeedData(context, userManager, roleManager);
-//    }
-//    catch (Exception ex)
-//    {
-//        Console.WriteLine($"eroare critica: {ex.Message}");
-//        // Nu da throw aici dacă vrei ca aplicația să pornească măcar (pentru debug)
-//    }
-//}
-
+// ==========================================
+// 6. INITIALIZARE BAZA DE DATE (Seeding & Migrare)
+// ==========================================
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -339,38 +178,33 @@ using (var scope = app.Services.CreateScope())
     {
         try
         {
-            logger.LogInformation($"Incercare conectare la DB... (Rămase: {retries})");
-
-            // 1. Aplicăm migrările (creăm tabelele)
+            logger.LogInformation($"Incercare conectare la DB... (Ramase: {retries})");
             await context.Database.MigrateAsync();
-
-            // 2. Rulăm seeding-ul
             await DbInitializer.SeedData(context, userManager, roleManager);
-
             dbReady = true;
-            logger.LogInformation("Succes: Baza de date este populată!");
+            logger.LogInformation("Succes: Baza de date este populata!");
         }
         catch (Exception ex)
         {
             retries--;
-            logger.LogWarning($"DB nu e gata încă. Eroare: {ex.Message}");
+            logger.LogWarning($"DB nu e gata inca. Eroare: {ex.Message}");
             if (retries == 0)
             {
-                logger.LogCritical("Eșec total după 10 încercări.");
+                logger.LogCritical("Esec total dupa 10 incercari.");
                 throw;
             }
-            await Task.Delay(5000); // Așteptăm 5 secunde înainte de reîncercare
+            await Task.Delay(5000);
         }
     }
 }
 
-
-
-// 5. Pipeline-ul HTTP
+// ==========================================
+// 7. HTTP REQUEST PIPELINE (Ordinea este matematica)
+// ==========================================
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI(); // Accesează /swagger în browser ca să vezi API-ul
+    app.UseSwaggerUI();
 }
 else
 {
@@ -378,16 +212,21 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
+// CORS trebuie sa fie exact aici, intre Routing si Authentication
+app.UseCors("FrontendPolicy");
+
 app.UseAuthentication();
-app.UseAuthorization();  
+app.UseAuthorization();
 
 app.MapControllers();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// Fortare port intern Docker pentru comunicarea cu Nginx
+app.Urls.Add("http://*:8080");
 
 app.Run();
