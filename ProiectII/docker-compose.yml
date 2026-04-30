@@ -27,6 +27,9 @@ services:
       - ConnectionStrings__DefaultConnection=Server=db;Port=3306;Database=FoxShelterDB;Uid=root;Pwd=RootPassword123!;
       - Jwt__Secret=Cheie_Ultra_Secreta_Si_Foarte_Lunga_De_Minim_64_Caractere_Asigura_Te_Ca_E_Lunga!!!
       - ASPNETCORE_URLS=http://+:8080
+    volumes:
+      # API-ul are permisiuni de scriere (pentru upload-uri)
+      - ./wwwroot:/app/wwwroot
 
   proxy:
     image: nginx:latest
@@ -36,9 +39,10 @@ services:
       - "8443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      # Mapam certificatele fizice de pe Windows (generate cu mkcert) direct in Nginx
       - ./certs/localhost.pem:/etc/nginx/certs/localhost.pem:ro
       - ./certs/localhost-key.pem:/etc/nginx/certs/localhost-key.pem:ro
+      # Nginx citește exact aceeași locație pentru a servi imaginile instantaneu (Read-Only)
+      - ./wwwroot:/app/wwwroot:ro
     depends_on:
       - api
 
