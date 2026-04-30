@@ -179,7 +179,7 @@ using (var scope = app.Services.CreateScope())
         try
         {
             logger.LogInformation($"Incercare conectare la DB... (Ramase: {retries})");
-            await context.Database.MigrateAsync();
+            //await context.Database.MigrateAsync();
             await DbInitializer.SeedData(context, userManager, roleManager);
             dbReady = true;
             logger.LogInformation("Succes: Baza de date este populata!");
