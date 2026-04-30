@@ -2,7 +2,8 @@
 {
     public enum ReportStatus : uint
     {
-        Pending,        
+        Pending,
+        Investigating,
         Investigated,  
         Resolved       
     }

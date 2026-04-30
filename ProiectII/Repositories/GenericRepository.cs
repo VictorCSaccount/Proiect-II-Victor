@@ -21,8 +21,11 @@ namespace ProiectII.Repositories
             await _dbSet.AsNoTracking().ToListAsync();
 
         // Atenție: Această metodă funcționează doar pentru entități cu PK de tip uint
-        public async Task<T?> GetByIdAsync(uint id) =>
-            await _dbSet.FindAsync(id);
+        // În GenericRepository.cs
+        public virtual async Task<T?> GetByIdAsync(uint id) // ADAUGĂ 'virtual' AICI
+        {
+            return await _dbSet.FindAsync(id);
+        }
 
         public async Task AddAsync(T entity) =>
             await _dbSet.AddAsync(entity);

@@ -2,56 +2,38 @@
 using ProiectII.Data;
 using ProiectII.Models;
 using ProiectII.Interfaces;
+
 namespace ProiectII.Repositories
 {
     public class CommentRepository : GenericRepository<Comment>, ICommentRepository
     {
-
-        private readonly ApplicationDbContext _context;
         public CommentRepository(ApplicationDbContext context) : base(context)
         {
-            _context = context;
         }
 
         public async Task<IEnumerable<Comment>> GetCommentsByFoxIdAsync(uint foxId)
         {
             return await _dbSet
-                .Include(c => c.User) // 
-                .Where(c => c.FoxId == foxId && !c.IsDeleted && c.IsVisible) // Soft Delete NU FACEM DELETE, ci doar marcam 
-                .AsNoTracking() // ceva ce chat spune ca trebuie pentru performanta
+                .AsNoTracking() // Mutat sus, e mai curat
+                .Include(c => c.User)
+                .Where(c => c.FoxId == foxId && !c.IsDeleted && c.IsVisible)
                 .ToListAsync();
         }
 
         public async Task<IEnumerable<Comment>> GetCommentsByUserIdAsync(string userId)
         {
             return await _dbSet
-                .Where(c => c.UserId == userId && !c.IsDeleted && c.IsVisible)
                 .AsNoTracking()
+                .Where(c => c.UserId == userId && !c.IsDeleted && c.IsVisible)
                 .ToListAsync();
         }
 
-
-        public async Task<Comment?> GetByIdAsync(uint id)
+        // CRITIC: Trebuie override pentru a inlocui metoda din GenericRepository
+        public override async Task<Comment?> GetByIdAsync(uint id)
         {
             return await _dbSet
                 .Include(c => c.User)
                 .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
         }
-
-
-        
-
-        public async Task UpdateAsync(Comment comment)
-        {
-            _context.Comments.Update(comment);
-            await _context.SaveChangesAsync();
-        }
-
-
     }
-
-
-
-
-
-    }
+}

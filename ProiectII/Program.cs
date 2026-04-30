@@ -1,6 +1,5 @@
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -13,12 +12,10 @@ using ProiectII.Repositories;
 using ProiectII.Services.CoreDomain;
 using ProiectII.Services.SecurityIdentity;
 using ProiectII.Services.UtilityServices;
-using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Afiseaza erorile detaliate pentru Identity
 Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII = true;
 
 // ==========================================
@@ -37,7 +34,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => {
 .AddDefaultTokenProviders();
 
 // ==========================================
-// 2. DEPENDENCY INJECTION (Servicii & Repo)
+// 2. DEPENDENCY INJECTION
 // ==========================================
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -52,11 +49,12 @@ builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();
+builder.Services.AddScoped<IAdoptionService, AdoptionService>();
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 // ==========================================
-// 3. AUTENTIFICARE JWT (Cu extragere din Cookie)
+// 3. AUTENTIFICARE JWT
 // ==========================================
 builder.Services.AddAuthentication(options =>
 {
@@ -82,29 +80,28 @@ builder.Services.AddAuthentication(options =>
         OnMessageReceived = context =>
         {
             var token = context.Request.Cookies["jwt_access_token"];
-            Console.WriteLine($"\n[DEBUG] Ce a venit pe teava din Cookie: '{token}'");
-
+            Console.WriteLine($"\n[DEBUG] Cookie JWT: '{token}'");
             if (!string.IsNullOrWhiteSpace(token) && token.Contains('.') && token != "undefined")
             {
                 context.Token = token.Replace("Bearer ", "").Trim('"').Trim();
-                Console.WriteLine("[DEBUG] Token acceptat si trimis la validare.");
+                Console.WriteLine("[DEBUG] Token acceptat.");
             }
             else
             {
-                Console.WriteLine("[DEBUG] Token respins la vama (format invalid sau lipsa).");
+                Console.WriteLine("[DEBUG] Token respins.");
             }
             return Task.CompletedTask;
         },
         OnAuthenticationFailed = context =>
         {
-            Console.WriteLine($"[EROARE DE VALIDARE JWT]: {context.Exception.Message}");
+            Console.WriteLine($"[EROARE JWT]: {context.Exception.Message}");
             return Task.CompletedTask;
         }
     };
 });
 
 // ==========================================
-// 4. CONFIGURARE CORS PENTRU FRONTEND
+// 4. CORS
 // ==========================================
 builder.Services.AddCors(options =>
 {
@@ -113,12 +110,12 @@ builder.Services.AddCors(options =>
         policy.WithOrigins("https://localhost:7033")
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials(); // Critic pentru a permite Cookie-urile intre porturi
+              .AllowCredentials();
     });
 });
 
 // ==========================================
-// 5. SWAGGER & API CONTROLLERS
+// 5. SWAGGER & CONTROLLERS
 // ==========================================
 builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
@@ -132,7 +129,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Introdu token-ul JWT (fără cuvântul Bearer în față)."
+        Description = "Introdu token-ul JWT."
     });
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -146,60 +143,102 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// ==========================================
-// ==========================================
-// BUILDER END - INCEPE CONFIGURAREA PIPELINE-ULUI
-// ==========================================
-// ==========================================
-
 var app = builder.Build();
 
-// Permite Forward Headers pentru Nginx (HTTPS Termination)
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedProto
 });
 
 // ==========================================
-// 6. INITIALIZARE BAZA DE DATE (Seeding & Migrare)
+// 6. MIGRARE AUTOMATA LA STARTUP (fara seed)
 // ==========================================
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var logger = services.GetRequiredService<ILogger<Program>>();
     var context = services.GetRequiredService<ApplicationDbContext>();
-    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
     int retries = 10;
-    bool dbReady = false;
-
-    while (!dbReady && retries > 0)
+    while (retries > 0)
     {
         try
         {
-            logger.LogInformation($"Incercare conectare la DB... (Ramase: {retries})");
-            //await context.Database.MigrateAsync();
-            await DbInitializer.SeedData(context, userManager, roleManager);
-            dbReady = true;
-            logger.LogInformation("Succes: Baza de date este populata!");
+            logger.LogInformation($"[DB] Incercare migrare... (Ramase: {retries})");
+            await context.Database.MigrateAsync();
+            logger.LogInformation("[DB] Migrare reusita! API pornit.");
+
+            using (var innerScope = app.Services.CreateScope())
+            {
+                var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+                foreach (var role in new[] { "Admin", "User", "Employee" })
+                    if (!await roleManager.RoleExistsAsync(role))
+                        await roleManager.CreateAsync(new IdentityRole(role));
+
+                if (await userManager.FindByEmailAsync("admin@fox.com") == null)
+                {
+                    var admin = new ApplicationUser
+                    {
+                        UserName = "admin@fox.com",
+                        Email = "admin@fox.com",
+                        FirstName = "Victor",
+                        LastName = "Admin",
+                        BornDate = new DateOnly(1995, 5, 20),
+                        EmailConfirmed = true,
+                        IsActive = true,
+                        LastLogin = DateTime.UtcNow
+                    };
+
+                    await userManager.CreateAsync(admin, "SecurePass123!");
+                    await userManager.AddToRoleAsync(admin, "Admin");
+                }
+
+                if (await userManager.FindByEmailAsync("user@fox.com") == null)
+                {
+                    var user = new ApplicationUser
+                    {
+                        UserName = "user@fox.com",
+                        Email = "user@fox.com",
+                        FirstName = "Ion",
+                        LastName = "Popescu",
+                        BornDate = new DateOnly(2000, 1, 1),
+                        EmailConfirmed = true,
+                        IsActive = true,
+                        LastLogin = DateTime.UtcNow
+                    };
+
+                    await userManager.CreateAsync(user, "UserPass123!");
+                    await userManager.AddToRoleAsync(user, "User");
+                }
+            }
+
+
+
+
+
+
+
+
+            break;
         }
         catch (Exception ex)
         {
             retries--;
-            logger.LogWarning($"DB nu e gata inca. Eroare: {ex.Message}");
+            logger.LogWarning($"[DB] Migrare esuata: {ex.Message}");
             if (retries == 0)
             {
-                logger.LogCritical("Esec total dupa 10 incercari.");
+                logger.LogCritical("[DB] Esec total la migrare!");
                 throw;
             }
-            await Task.Delay(5000);
+            await Task.Delay(3000);
         }
     }
 }
 
 // ==========================================
-// 7. HTTP REQUEST PIPELINE (Ordinea este matematica)
+// 7. PIPELINE
 // ==========================================
 if (app.Environment.IsDevelopment())
 {
@@ -214,19 +253,14 @@ else
 
 app.UseStaticFiles();
 app.UseRouting();
-
-// CORS trebuie sa fie exact aici, intre Routing si Authentication
 app.UseCors("FrontendPolicy");
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// Fortare port intern Docker pentru comunicarea cu Nginx
 app.Urls.Add("http://*:8080");
 
 app.Run();

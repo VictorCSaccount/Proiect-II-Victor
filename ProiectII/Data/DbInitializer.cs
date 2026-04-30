@@ -9,10 +9,14 @@ namespace ProiectII.Data
         public static async Task SeedData(ApplicationDbContext context, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             // 1. Roluri
-            if (!roleManager.Roles.Any())
+            var roles = new[] { "Admin", "User", "Employee" };
+
+            foreach (var role in roles)
             {
-                await roleManager.CreateAsync(new IdentityRole("Admin"));
-                await roleManager.CreateAsync(new IdentityRole("User"));
+                if (!await roleManager.RoleExistsAsync(role))
+                {
+                    await roleManager.CreateAsync(new IdentityRole(role));
+                }
             }
 
             // 2. Utilizatori (Admin și un User normal pentru testarea adopțiilor/rapoartelor)

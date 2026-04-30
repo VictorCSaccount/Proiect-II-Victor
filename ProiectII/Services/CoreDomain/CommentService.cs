@@ -2,11 +2,9 @@
 using ProiectII.DTO.CommentsReport;
 using ProiectII.Interfaces;
 using ProiectII.Models;
-using ProiectII.Repositories;
 
 namespace ProiectII.Services.CoreDomain
 {
-
     public class CommentService : ICommentService
     {
         private readonly ICommentRepository _repository;
@@ -18,13 +16,11 @@ namespace ProiectII.Services.CoreDomain
             _mapper = mapper;
         }
 
-
         public async Task<IEnumerable<CommentDto>> GetCommentsByFoxIdAsync(uint foxId)
         {
             var comments = await _repository.GetCommentsByFoxIdAsync(foxId);
             return _mapper.Map<IEnumerable<CommentDto>>(comments);
         }
-
 
         public async Task<IEnumerable<CommentDto>> GetCommentsByUserIdAsync(string userId)
         {
@@ -35,25 +31,25 @@ namespace ProiectII.Services.CoreDomain
         public async Task<CommentDto> CreateCommentAsync(CreateCommentDto dto, string userId)
         {
             var commentEntity = _mapper.Map<Comment>(dto);
+
+            // Setarile care NU vin din DTO
             commentEntity.UserId = userId;
-            //commentEntity.IsDeleted = false; // Setăm valoarea implicită pentru soft delete
-            commentEntity.CreatedAt = DateTime.UtcNow; // Setăm data curentă pentru createdAt
+            commentEntity.CreatedAt = DateTime.UtcNow;
             commentEntity.UpdatedAt = null;
-            commentEntity.IsDeleted = false; // Setăm valoarea implicită pentru soft delete
-            commentEntity.Content = dto.Content; // Asigurăm că conținutul este preluat din DTO
-            commentEntity.FoxId = dto.FoxId; // Asigurăm că FoxId este preluat din DTO
+            commentEntity.IsDeleted = false;
+            commentEntity.IsVisible = true; // Implicit, e vizibil cand e postat
 
             await _repository.AddAsync(commentEntity);
+            await _repository.SaveChangesAsync(); // CRITIC: Executia salvarii
+
             return _mapper.Map<CommentDto>(commentEntity);
         }
-
-
 
         public async Task<bool> EditCommentAsync(uint commentId, UpdateCommentDto dto, string userId)
         {
             var comment = await _repository.GetByIdAsync(commentId);
 
-            if (comment == null || comment.UserId != userId)
+            if (comment == null || comment.UserId != userId || comment.IsDeleted)
             {
                 return false;
             }
@@ -61,11 +57,9 @@ namespace ProiectII.Services.CoreDomain
             comment.Content = dto.EditedContent;
             comment.UpdatedAt = DateTime.UtcNow;
 
-            await _repository.UpdateAsync(comment);
-
-            return true;
+            _repository.Update(comment);
+            return await _repository.SaveChangesAsync(); // CRITIC: Salvare in DB
         }
-
 
         public async Task<bool> DeleteCommentAsync(uint commentId, string userId)
         {
@@ -74,63 +68,50 @@ namespace ProiectII.Services.CoreDomain
             {
                 return false;
             }
-            // Soft delete!!!
+
             comment.IsDeleted = true;
             comment.UpdatedAt = DateTime.UtcNow;
-            await _repository.UpdateAsync(comment);
-            return true;
 
+            _repository.Update(comment);
+            return await _repository.SaveChangesAsync();
         }
 
-
-        /// <summary>
-        ///  fucntii admin!!
-        ///  
-        /// </summary>
+        // --- FUNCTII ADMIN ---
 
         public async Task<bool> AdminHideComment(uint commentId)
         {
             var comment = await _repository.GetByIdAsync(commentId);
-            if (comment == null)
-            {
-                return false;
-            }
+            if (comment == null) return false;
+
             comment.IsVisible = false;
             comment.UpdatedAt = DateTime.UtcNow;
-            await _repository.UpdateAsync(comment);
-            return true;
+
+            _repository.Update(comment);
+            return await _repository.SaveChangesAsync();
         }
 
         public async Task<bool> AdminUnhideComment(uint commentId)
         {
             var comment = await _repository.GetByIdAsync(commentId);
-            if (comment == null)
-            {
-                return false;
-            }
+            if (comment == null) return false;
+
             comment.IsVisible = true;
             comment.UpdatedAt = DateTime.UtcNow;
-            await _repository.UpdateAsync(comment);
-            return true;
-        }
 
+            _repository.Update(comment);
+            return await _repository.SaveChangesAsync();
+        }
 
         public async Task<bool> AdminDeleteCommentAsync(uint commentId)
         {
             var comment = await _repository.GetByIdAsync(commentId);
-            if (comment == null)
-            {
-                return false;
-            }
+            if (comment == null) return false;
+
             comment.IsDeleted = true;
             comment.UpdatedAt = DateTime.UtcNow;
-            await _repository.UpdateAsync(comment);
-            return true;
+
+            _repository.Update(comment);
+            return await _repository.SaveChangesAsync();
         }
-
-
-
-
-
     }
 }

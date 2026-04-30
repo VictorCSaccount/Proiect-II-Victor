@@ -1,52 +1,128 @@
-﻿using AutoMapper;
-using ProiectII.DTO.FoxManagement;
+﻿using ProiectII.DTO.FoxManagement;
 using ProiectII.Interfaces;
 using ProiectII.Models;
 
+namespace ProiectII.Services.CoreDomain;
 
-namespace ProiectII.Services.CoreDomain
+public class FoxService(
+    IFoxRepository foxRepository,
+    ILocationRepository locationRepository,
+    IFileStorageService fileStorageService) : IFoxService
 {
-    public class FoxService : IFoxService
+    public async Task<IEnumerable<FoxSummaryDto>> GetAllFoxesAsync()
     {
-        private readonly IFoxRepository _foxRepository;
-        private readonly IMapper _mapper;
-
-        public FoxService(IFoxRepository foxRepository, IMapper mapper)
+        var foxes = await foxRepository.GetFoxesWithDetailsAsync();
+        // Filtrăm vulpile șterse (Soft Delete)
+        return foxes.Where(f => !f.IsDeleted).Select(f => new FoxSummaryDto
         {
-            _foxRepository = foxRepository;
-            _mapper = mapper;
+            Id = f.Id,
+            Name = f.Name,
+            ImageUrl = f.ImageUrl,
+            StatusName = f.Status?.Name ?? "Necunoscut"
+        });
+    }
+
+    public async Task<FoxDetailsDto?> GetFoxByIdAsync(uint id)
+    {
+        var fox = await foxRepository.GetFoxByIdWithDetailsAsync(id);
+        if (fox == null || fox.IsDeleted) return null;
+
+        return new FoxDetailsDto
+        {
+            Id = fox.Id,
+            Name = fox.Name,
+            Description = fox.Description,
+            ImageUrl = fox.ImageUrl,
+            StatusName = fox.Status?.Name ?? "Necunoscut",
+            LastSeenLatitude = fox.FirstSeenLocation?.Coordinate != null ? (double)fox.FirstSeenLocation.Coordinate.Latitude : 0,
+            LastSeenLongitude = fox.FirstSeenLocation?.Coordinate != null ? (double)fox.FirstSeenLocation.Coordinate.Longitude : 0
+        };
+    }
+
+    public async Task<FoxDetailsDto> CreateFoxAsync(CreateFoxDto dto)
+    {
+        string? savedImageUrl = null;
+        if (dto.Image != null && dto.Image.Length > 0)
+        {
+            savedImageUrl = await fileStorageService.SaveFileAsync(dto.Image, "foxes");
         }
 
-        public async Task<FoxDetailsDto> CreateFoxAsync(CreateFoxDto dto)
+        var newLocation = new Location
         {
+            Name = $"Initial sighting: {dto.Name}",
+            Coordinate = new Coordinate
+            {
+                Latitude = (decimal)dto.FirstSeenLatitude,
+                Longitude = (decimal)dto.FirstSeenLongitude
+            }
+        };
 
+        await locationRepository.AddAsync(newLocation);
+        await locationRepository.SaveChangesAsync(); // Salvare locație pentru a obține ID
 
-            ////////////////cred ca maitrebuie modificiat
-            var foxEntity = _mapper.Map<Fox>(dto);
+        var newFox = new Fox
+        {
+            Name = dto.Name,
+            Description = dto.Description,
+            ImageUrl = savedImageUrl,
+            StatusId = dto.StatusId,
+            EnclosureId = dto.EnclosureId,
+            FirstSeenLocationId = newLocation.Id,
+            IsDeleted = false
+        };
 
-            foxEntity.IsDeleted = false;
+        await foxRepository.AddAsync(newFox);
+        await foxRepository.SaveChangesAsync(); // Salvare vulpe
 
-            await _foxRepository.AddAsync(foxEntity);
+        return new FoxDetailsDto
+        {
+            Id = newFox.Id,
+            Name = newFox.Name,
+            Description = newFox.Description,
+            ImageUrl = newFox.ImageUrl,
+            LastSeenLatitude = dto.FirstSeenLatitude,
+            LastSeenLongitude = dto.FirstSeenLongitude
+        };
+    }
 
-            return _mapper.Map<FoxDetailsDto>(foxEntity);
+    public async Task<bool> UpdateFoxAsync(uint foxId, UpdateFoxDto dto)
+    {
+        var fox = await foxRepository.GetFoxByIdWithDetailsAsync(foxId);
+        if (fox == null || fox.IsDeleted) return false;
+
+        fox.Name = dto.Name;
+        fox.Description = dto.Description;
+        fox.EnclosureId = dto.EnclosureId;
+
+        if (fox.FirstSeenLocation != null)
+        {
+            fox.FirstSeenLocation.Coordinate.Latitude = (decimal)dto.Latitude;
+            fox.FirstSeenLocation.Coordinate.Longitude = (decimal)dto.Longitude;
         }
 
+        foxRepository.Update(fox);
+        return await foxRepository.SaveChangesAsync();
+    }
 
-        public async Task<IEnumerable<FoxSummaryDto>> GetAllFoxesAsync()
-        {
-            // 1. Iei datele brute din baza de date
-            var foxes = await _foxRepository.GetAllAsync();
+    public async Task<bool> UpdateFoxStatusAsync(uint foxId, UpdateFoxStatusDto dto)
+    {
+        var fox = await foxRepository.GetByIdAsync(foxId);
+        if (fox == null || fox.IsDeleted) return false;
 
-            // 2. Le transformi în DTO-uri (traducerea)
-            return _mapper.Map<IEnumerable<FoxSummaryDto>>(foxes);
-        }
+        fox.StatusId = dto.NewStatusId;
 
-        public async Task<FoxDetailsDto?> GetFoxByIdAsync(uint id)
-        {
-            var fox = await _foxRepository.GetByIdAsync(id);
-            if (fox == null) return null;
+        foxRepository.Update(fox);
+        return await foxRepository.SaveChangesAsync();
+    }
 
-            return _mapper.Map<FoxDetailsDto>(fox);
-        }
+    public async Task<bool> ArchiveFoxAsync(uint foxId)
+    {
+        var fox = await foxRepository.GetByIdAsync(foxId);
+        if (fox == null) return false;
+
+        fox.IsDeleted = true; 
+
+        foxRepository.Update(fox);
+        return await foxRepository.SaveChangesAsync();
     }
 }
