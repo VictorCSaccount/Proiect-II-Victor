@@ -27,7 +27,8 @@ services:
       - ConnectionStrings__DefaultConnection=Server=db;Port=3306;Database=FoxShelterDB;Uid=root;Pwd=RootPassword123!;
       - Jwt__Secret=Cheie_Ultra_Secreta_Si_Foarte_Lunga_De_Minim_64_Caractere_Asigura_Te_Ca_E_Lunga!!!
       - ASPNETCORE_URLS=http://+:8080
-
+    volumes:
+      - ./wwwroot/uploads:/app/wwwroot/uploads
   proxy:
     image: nginx:latest
     container_name: fox_proxy
@@ -39,6 +40,7 @@ services:
       # Mapam certificatele fizice de pe Windows (generate cu mkcert) direct in Nginx
       - ./certs/localhost.pem:/etc/nginx/certs/localhost.pem:ro
       - ./certs/localhost-key.pem:/etc/nginx/certs/localhost-key.pem:ro
+      - ./wwwroot:/app/wwwroot:ro
     depends_on:
       - api
 
