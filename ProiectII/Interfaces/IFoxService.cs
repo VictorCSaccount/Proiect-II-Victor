@@ -13,5 +13,7 @@ namespace ProiectII.Interfaces
         Task<bool> ArchiveFoxAsync(uint id);
         Task<bool> UpdateFoxStatusAsync(uint id, UpdateFoxStatusDto dto);
         Task<bool> UpdateFoxAsync(uint id, UpdateFoxDto dto);
+
+        Task<IEnumerable<FoxMapMarkerDto>> GetMapMarkersAsync();
     }
 }

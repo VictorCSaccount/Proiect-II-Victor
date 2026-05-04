@@ -56,13 +56,7 @@ namespace ProiectII.Services.CoreDomain
 
                 await _reportRepository.AddAsync(report);
                 await _reportRepository.SaveChangesAsync(); // Aici raportul este oficial în DB
-
-                // ========================================================
-                // 4. CRITIC: Preluăm raportul DIN NOU, cu tot cu User și Locație
-                // ========================================================
-                // Dacă returnezi doar '_mapper.Map<ReportDto>(report)', numele va fi 'Guest' 
-                // pentru că obiectul 'report' în memorie nu conține datele utilizatorului abia asociat.
-
+                
                 var completeReport = await _reportRepository.GetByIdWithDetailsAsync(report.Id);
 
                 if (completeReport == null)
@@ -72,7 +66,6 @@ namespace ProiectII.Services.CoreDomain
             }
             catch (Exception)
             {
-                // Rollback manual: Dacă a crăpat DB-ul, ștergem poza de pe SSD
                 _fileService.DeleteFile(imageUrl);
                 throw;
             }

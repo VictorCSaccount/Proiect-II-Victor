@@ -1,14 +1,16 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProiectII.DTO.FoxManagement;
 using ProiectII.Interfaces;
+using ProiectII.Services.CoreDomain;
 
 namespace ProiectII.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class FoxController(IFoxService foxService) : ControllerBase
+public class FoxController(IFoxService foxService, IMapper mapper) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetFoxes() => Ok(await foxService.GetAllFoxesAsync());
@@ -51,4 +53,20 @@ public class FoxController(IFoxService foxService) : ControllerBase
         var success = await foxService.ArchiveFoxAsync(id);
         return success ? Ok(new { Message = "Vulpe arhivată." }) : NotFound();
     }
+
+
+
+
+
+
+    [AllowAnonymous]
+    [HttpGet("map-markers")]
+    public async Task<IActionResult> GetMapMarkers()
+    {
+        var activeMarkers = await foxService.GetMapMarkersAsync();
+
+        return Ok(activeMarkers);
+    }
+
+
 }

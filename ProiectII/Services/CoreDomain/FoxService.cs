@@ -1,13 +1,16 @@
-﻿using ProiectII.DTO.FoxManagement;
+﻿using AutoMapper;
+using ProiectII.DTO.FoxManagement;
 using ProiectII.Interfaces;
 using ProiectII.Models;
+using ProiectII.Repositories;
 
 namespace ProiectII.Services.CoreDomain;
 
 public class FoxService(
     IFoxRepository foxRepository,
     ILocationRepository locationRepository,
-    IFileStorageService fileStorageService) : IFoxService
+    IFileStorageService fileStorageService,
+    IMapper mapper) : IFoxService
 {
     public async Task<IEnumerable<FoxSummaryDto>> GetAllFoxesAsync()
     {
@@ -125,4 +128,15 @@ public class FoxService(
         foxRepository.Update(fox);
         return await foxRepository.SaveChangesAsync();
     }
+
+
+    public async Task<IEnumerable<FoxMapMarkerDto>> GetMapMarkersAsync()
+    {
+        var foxes = await foxRepository.GetFoxesWithDetailsAsync();
+
+        var markers = mapper.Map<IEnumerable<FoxMapMarkerDto>>(foxes);
+
+        return markers.Where(m => m.Latitude != 0 && m.Longitude != 0);
+    }
+
 }

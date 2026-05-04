@@ -4,7 +4,6 @@ using ProiectII.Models;
 
 namespace ProiectII.Services.CoreDomain
 {
-    // Primary Constructor - curat și eficient
     public class AdoptionService(IAdoptionRepository adoptionRepository, IFoxRepository foxRepository) : IAdoptionService
     {
         public async Task<AdoptionDto> CreateAdoptionRequestAsync(string userId, AdoptionRequestDto dto)
@@ -15,22 +14,17 @@ namespace ProiectII.Services.CoreDomain
                 UserId = userId,
                 RequestDate = DateTime.UtcNow,
                 Reason = dto.ApplicantMessage,
-                // Cast explicit către Enum
-                AdoptionStatus = (AdoptionStatus)1 // 1 = Pending
+                AdoptionStatus = (AdoptionStatus)1 
             };
 
             await adoptionRepository.AddAsync(adoption);
-            // Salvarea efectivă în MariaDB
             await adoptionRepository.SaveChangesAsync();
 
-            return new AdoptionDto
-            {
-                Id = adoption.Id,
-                FoxId = adoption.FoxId,
-                ApplicantMessage = adoption.Reason,
-                SubmittedAt = adoption.RequestDate,
-                Status = "Pending"
-            };
+            
+            var adoptions = await adoptionRepository.GetAllWithDetailsAsync();
+            var completeAdoption = adoptions.FirstOrDefault(a => a.Id == adoption.Id);
+
+            return MapToDtoList(new[] { completeAdoption ?? adoption }).First();
         }
 
         public async Task<IEnumerable<AdoptionDto>> GetAllAdoptionsAsync()
@@ -58,7 +52,6 @@ namespace ProiectII.Services.CoreDomain
             adoption.AdoptionStatus = noulStatus;
             adoption.AdminComment = dto.AdminComment;
 
-            // CORECT: Metodă sincronă (fără await), modifică doar starea în RAM
             adoptionRepository.Update(adoption);
 
             if (noulStatus == (AdoptionStatus)2)
@@ -71,11 +64,9 @@ namespace ProiectII.Services.CoreDomain
                 }
             }
 
-            // Aici se trimit toate modificările (Adoption + Fox) către baza de date într-o singură tranzacție
             return await adoptionRepository.SaveChangesAsync();
         }
 
-        // Metodă statică pentru mapare - elimină warning-ul de instanță
         private static IEnumerable<AdoptionDto> MapToDtoList(IEnumerable<Adoption> adoptions)
         {
             return adoptions.Select(a => new AdoptionDto

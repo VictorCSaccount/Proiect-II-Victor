@@ -37,10 +37,26 @@ public class ReportsController : ControllerBase
     //}
 
     [HttpGet]
+    [Authorize] // Adăugăm Authorize pentru a ne asigura că avem un utilizator identificat
     public async Task<IActionResult> GetAll()
     {
         var reports = await _reportService.GetAllActiveReportsAsync();
-        return Ok(reports);
+
+        bool isStaff = User.IsInRole("Admin") || User.IsInRole("Employee");
+
+        if (isStaff)
+        {
+            return Ok(reports);
+        }
+        var currentUserEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+        if (string.IsNullOrEmpty(currentUserEmail))
+        {
+            return Unauthorized("Identitate nedetectată.");
+        }
+
+        var personalReports = reports.Where(r => r.ReporterName == currentUserEmail);
+
+        return Ok(personalReports);
     }
 
 

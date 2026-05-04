@@ -76,6 +76,21 @@ namespace ProiectII.Mappings
                 .ForMember(dest => dest.Reports, opt => opt.Ignore());
 
 
+            CreateMap<Fox, FoxMapMarkerDto>()
+                .ForMember(dest => dest.FoxId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.Status != null ? src.Status.Name : "Necunoscut"))
+
+                .ForMember(dest => dest.Latitude, opt => opt.MapFrom(src =>
+                    src.LastSeenLocation != null ? (double)src.LastSeenLocation.Coordinate.Latitude :
+                    (src.FirstSeenLocation != null ? (double)src.FirstSeenLocation.Coordinate.Latitude : 0)))
+
+                .ForMember(dest => dest.Longitude, opt => opt.MapFrom(src =>
+                    src.LastSeenLocation != null ? (double)src.LastSeenLocation.Coordinate.Longitude :
+                    (src.FirstSeenLocation != null ? (double)src.FirstSeenLocation.Coordinate.Longitude : 0)));
+
+
+
+
             // ==========================================
             // 2. ADOPTION PROCESS
             // ==========================================

@@ -6,7 +6,8 @@ COPY ["ProiectII.csproj", "./"]
 RUN dotnet restore "ProiectII.csproj"
 
 COPY . .
-# LINIA NOUA: Distrugem fizic mizeria locala in container inainte de build
+
+# Distrugem fizic mizeria locala in container inainte de build
 RUN rm -rf bin/ obj/
 
 RUN dotnet build "ProiectII.csproj" -c Release -o /app/build
@@ -18,4 +19,7 @@ WORKDIR /app
 EXPOSE 8080
 
 COPY --from=build /app/publish .
+
+COPY --from=build /src/SeedImages ./SeedImages
+
 ENTRYPOINT ["dotnet", "ProiectII.dll"]

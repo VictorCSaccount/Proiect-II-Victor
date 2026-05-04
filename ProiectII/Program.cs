@@ -50,6 +50,7 @@ builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 builder.Services.AddScoped<IAdoptionService, AdoptionService>();
+builder.Services.AddScoped<IFoxService, FoxService>();
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 

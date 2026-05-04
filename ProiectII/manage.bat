@@ -96,6 +96,13 @@ GOTO MENU
 :RESET
 ECHO [AVERTISMENT] Stergere totala...
 docker-compose down -v
+
+
+:: Stergem folderul de upload-uri (poze vechi, rapoarte de test, etc.)
+if exist "wwwroot\uploads" (
+    ECHO [INFO] Stergere folder uploads...
+    rmdir /s /q "wwwroot\uploads"
+)
 if exist "Migrations" rmdir /s /q "Migrations"
 if exist "bin" rmdir /s /q "bin"
 if exist "obj" rmdir /s /q "obj"
