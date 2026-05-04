@@ -153,6 +153,68 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 // ==========================================
 // 6. MIGRARE AUTOMATA LA STARTUP (fara seed)
 // ==========================================
+//using (var scope = app.Services.CreateScope())
+//{
+//    var services = scope.ServiceProvider;
+//    var logger = services.GetRequiredService<ILogger<Program>>();
+//    var context = services.GetRequiredService<ApplicationDbContext>();
+
+//    int retries = 10;
+//    while (retries > 0)
+//    {
+//        try
+//        {
+//            logger.LogInformation($"[DB] Incercare migrare... (Ramase: {retries})");
+//            await context.Database.MigrateAsync();
+//            logger.LogInformation("[DB] Migrare reusita! API pornit.");
+
+//            using (var innerScope = app.Services.CreateScope())
+//            {
+//                var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+//                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+//                foreach (var role in new[] { "Admin", "User", "Employee" })
+//                    if (!await roleManager.RoleExistsAsync(role))
+//                        await roleManager.CreateAsync(new IdentityRole(role));
+
+//                if (await userManager.FindByEmailAsync("admin@fox.com") == null)
+//                {
+//                    var admin = new ApplicationUser
+//                    {
+//                        UserName = "admin@fox.com",
+//                        Email = "admin@fox.com",
+//                        FirstName = "Victor",
+//                        LastName = "Admin",
+//                        BornDate = new DateOnly(1995, 5, 20),
+//                        EmailConfirmed = true,
+//                        IsActive = true,
+//                        LastLogin = DateTime.UtcNow
+//                    };
+
+//                    await userManager.CreateAsync(admin, "SecurePass123!");
+//                    await userManager.AddToRoleAsync(admin, "Admin");
+//                }
+
+//                if (await userManager.FindByEmailAsync("user@fox.com") == null)
+//                {
+//                    var user = new ApplicationUser
+//                    {
+//                        UserName = "user@fox.com",
+//                        Email = "user@fox.com",
+//                        FirstName = "Ion",
+//                        LastName = "Popescu",
+//                        BornDate = new DateOnly(2000, 1, 1),
+//                        EmailConfirmed = true,
+//                        IsActive = true,
+//                        LastLogin = DateTime.UtcNow
+//                    };
+
+//                    await userManager.CreateAsync(user, "UserPass123!");
+//                    await userManager.AddToRoleAsync(user, "User");
+//                }
+//            }
+
+
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -164,78 +226,59 @@ using (var scope = app.Services.CreateScope())
     {
         try
         {
-            logger.LogInformation($"[DB] Incercare migrare... (Ramase: {retries})");
+            logger.LogInformation("[DB] Încercare migrare... (Rămase: {Retries})", retries);
+
+            // 1. Aplică structura tabelelor
             await context.Database.MigrateAsync();
-            logger.LogInformation("[DB] Migrare reusita! API pornit.");
+            logger.LogInformation("[DB] Migrare reușită! Tabelele există.");
 
-            using (var innerScope = app.Services.CreateScope())
-            {
-                var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            // 2. Extrage managerii necesari pentru Identity
+            var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+            var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-                foreach (var role in new[] { "Admin", "User", "Employee" })
-                    if (!await roleManager.RoleExistsAsync(role))
-                        await roleManager.CreateAsync(new IdentityRole(role));
+            // 3. Apelează clasa ta externă (asigură-te că namespace-ul ProiectII.Data este importat sus cu 'using')
+            await DbInitializer.SeedData(context, userManager, roleManager);
+            logger.LogInformation("[DB] Seeding-ul datelor a fost finalizat cu succes.");
 
-                if (await userManager.FindByEmailAsync("admin@fox.com") == null)
-                {
-                    var admin = new ApplicationUser
-                    {
-                        UserName = "admin@fox.com",
-                        Email = "admin@fox.com",
-                        FirstName = "Victor",
-                        LastName = "Admin",
-                        BornDate = new DateOnly(1995, 5, 20),
-                        EmailConfirmed = true,
-                        IsActive = true,
-                        LastLogin = DateTime.UtcNow
-                    };
-
-                    await userManager.CreateAsync(admin, "SecurePass123!");
-                    await userManager.AddToRoleAsync(admin, "Admin");
-                }
-
-                if (await userManager.FindByEmailAsync("user@fox.com") == null)
-                {
-                    var user = new ApplicationUser
-                    {
-                        UserName = "user@fox.com",
-                        Email = "user@fox.com",
-                        FirstName = "Ion",
-                        LastName = "Popescu",
-                        BornDate = new DateOnly(2000, 1, 1),
-                        EmailConfirmed = true,
-                        IsActive = true,
-                        LastLogin = DateTime.UtcNow
-                    };
-
-                    await userManager.CreateAsync(user, "UserPass123!");
-                    await userManager.AddToRoleAsync(user, "User");
-                }
-            }
-
-
-
-
-
-
-
-
-            break;
+            break; // Ieșim din buclă dacă totul a decurs fără erori
         }
         catch (Exception ex)
         {
             retries--;
-            logger.LogWarning($"[DB] Migrare esuata: {ex.Message}");
+            logger.LogWarning("[DB] Migrare/Seeding eșuat: {Message}", ex.Message);
+
             if (retries == 0)
             {
-                logger.LogCritical("[DB] Esec total la migrare!");
+                logger.LogCritical("[DB] Eșec total la migrare și inițializare!");
                 throw;
             }
-            await Task.Delay(3000);
+            await Task.Delay(3000); // Pauză înainte de următoarea încercare
         }
     }
 }
+
+
+
+
+
+
+
+
+//            break;
+//        }
+//        catch (Exception ex)
+//        {
+//            retries--;
+//            logger.LogWarning($"[DB] Migrare esuata: {ex.Message}");
+//            if (retries == 0)
+//            {
+//                logger.LogCritical("[DB] Esec total la migrare!");
+//                throw;
+//            }
+//            await Task.Delay(3000);
+//        }
+//    }
+//}
 
 // ==========================================
 // 7. PIPELINE
