@@ -14,27 +14,27 @@ public class ReportsController : ControllerBase
     {
         _reportService = reportService;
     }
-    [HttpPost]
-    [Authorize] // Obligatoriu logat pentru a raporta
-    [Consumes("multipart/form-data")]
-    public async Task<IActionResult> Create([FromForm] CreateReportDto dto)
-    {
-        // Extragem ID-ul real din token-ul de securitate
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    //[HttpPost]
+    //[Authorize] // Obligatoriu logat pentru a raporta
+    //[Consumes("multipart/form-data")]
+    //public async Task<IActionResult> Create([FromForm] CreateReportDto dto)
+    //{
+    //    // Extragem ID-ul real din token-ul de securitate
+    //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        if (string.IsNullOrEmpty(userId))
-            return Unauthorized("Utilizator invalid.");
+    //    if (string.IsNullOrEmpty(userId))
+    //        return Unauthorized("Utilizator invalid.");
 
-        try
-        {
-            var result = await _reportService.CreateReportAsync(dto, userId);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
-    }
+    //    try
+    //    {
+    //        var result = await _reportService.CreateReportAsync(dto, userId);
+    //        return Ok(result);
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        return BadRequest(ex.Message);
+    //    }
+    //}
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
@@ -63,4 +63,23 @@ public class ReportsController : ControllerBase
 
         return Ok(new { Message = "Raport șters permanent (inclusiv imaginea)." });
     }
+
+
+    [HttpPost]
+    public async Task<IActionResult> CreateReport([FromForm] CreateReportDto dto)
+    {
+        string? currentUserId = null;
+
+        if (User.Identity != null && User.Identity.IsAuthenticated)
+        {
+            currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        }
+
+        var createdReport = await _reportService.CreateReportAsync(dto, currentUserId);
+
+        return Ok(createdReport);
+    }
+
+
+
 }
