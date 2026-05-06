@@ -371,3 +371,4 @@ wwwroot/uploads/
 /ProiectII/Migrations
 /ProiectII/certs
 /ProiectII/certs
+ProiectII/cloudflared/credentials.json

@@ -1,0 +1,7 @@
+﻿tunnel: fox-app
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  - hostname: tralalelo.online
+    service: http://proxy:80
+  - service: http_status:404

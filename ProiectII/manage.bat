@@ -73,17 +73,21 @@ IF %ERRORLEVEL% NEQ 0 (
 IF EXIST "bin" rmdir /s /q "bin"
 IF EXIST "obj" rmdir /s /q "obj"
 
+ECHO [INFO] Pornire API, Proxy si Cloudflare...
+docker-compose up -d --build api proxy cloudflared
+
 ECHO [OK] Totul e gata!
 timeout /t 5 /nobreak
-start https://localhost:8443/swagger/index.html
+start http://localhost:8000/swagger/index.html
 GOTO MENU
 
 
 :START_LOCAL
 ECHO [INFO] Pornire rapida (fara rebuild)...
-docker-compose start
+docker-compose up -d
 timeout /t 5 /nobreak
-start https://localhost:8443/swagger/index.html
+start http://localhost:8000/swagger/index.html
+start https://tralalelo.online/swagger/index.html
 GOTO MENU
 
 
