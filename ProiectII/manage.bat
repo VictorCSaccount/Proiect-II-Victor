@@ -73,8 +73,13 @@ IF %ERRORLEVEL% NEQ 0 (
 IF EXIST "bin" rmdir /s /q "bin"
 IF EXIST "obj" rmdir /s /q "obj"
 
+ECHO [INFO] Pornire API, Proxy, Cloudflare si Email...
+docker-compose up -d --build api proxy cloudflared mailpit
+
 ECHO [INFO] Pornire API, Proxy si Cloudflare...
 docker-compose up -d --build api proxy cloudflared
+
+
 
 ECHO [OK] Totul e gata!
 timeout /t 5 /nobreak

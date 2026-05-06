@@ -4,4 +4,6 @@ credentials-file: /etc/cloudflared/credentials.json
 ingress:
   - hostname: tralalelo.online
     service: http://proxy:80
+  - hostname: mail.tralalelo.online
+    service: http://mailpit:8025
   - service: http_status:404

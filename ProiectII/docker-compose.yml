@@ -27,7 +27,9 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=db;Port=3306;Database=FoxShelterDB;Uid=root;Pwd=RootPassword123!;
       - Jwt__Secret=Cheie_Ultra_Secreta_Si_Foarte_Lunga_De_Minim_64_Caractere_Asigura_Te_Ca_E_Lunga!!!
-      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_URLS=http://0.0.0.0:8080
+      - Smtp__Host=mailpit
+      - Smtp__Port=1025
     volumes:
       - ./wwwroot:/app/wwwroot
 
@@ -52,6 +54,14 @@ services:
       - ./cloudflared:/etc/cloudflared
     depends_on:
       - proxy
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: fox_mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025" 
+      - "1025:1025"
 
 volumes:
   db_data:
