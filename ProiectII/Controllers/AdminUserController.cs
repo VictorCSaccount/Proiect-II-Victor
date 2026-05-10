@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ProiectII.DTO.AdminSystem;
 using ProiectII.Models;
 
@@ -67,16 +68,87 @@ namespace ProiectII.Controllers
 
             return Ok(new { Message = dto.IsActive ? "Cont activat." : "Cont dezactivat." });
         }
+
+
+
+
+
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllUsersForSelection()
+        {
+            // Folosim proiecția .Select() pentru a nu descărca PasswordHash și SecurityStamp din DB
+            var users = await _userManager.Users
+                .Select(u => new UserSelectionDto
+                {
+                    Id = u.Id,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Email = u.Email,
+                    ProfilePictureUrl = u.ProfilePictureUrl
+                })
+                .ToListAsync();
+
+            return Ok(users);
+        }
+
+
+
+        [HttpPost]
+        public async Task<IActionResult> CreateUser([FromBody] CreateUserDirectDto dto)
+        {
+            var user = new ApplicationUser
+            {
+                UserName = dto.Email,
+                Email = dto.Email,
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                EmailConfirmed = true // Bypass confirmare email
+            };
+
+            var result = await _userManager.CreateAsync(user, dto.Password);
+            if (!result.Succeeded) return BadRequest(result.Errors);
+
+            await _userManager.AddToRoleAsync(user, dto.Role);
+            return Ok(new { Message = "Utilizator creat cu succes." });
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserDetailsDto dto)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null) return NotFound("Utilizatorul nu a fost găsit.");
+
+            user.FirstName = dto.FirstName;
+            user.LastName = dto.LastName;
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded) return BadRequest(result.Errors);
+
+            return Ok(new { Message = "Datele utilizatorului au fost actualizate." });
+        }
+
+        //[HttpPost("{id}/reset-password")]
+        //public async Task<IActionResult> ForceResetPassword(string id, [FromBody] ForceResetPasswordDto dto)
+        //{
+        //    var user = await _userManager.FindByIdAsync(id);
+        //    if (user == null) return NotFound("Utilizatorul nu a fost găsit.");
+
+        //    // Generăm un token de resetare intern și îl folosim instant
+        //    var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        //    var result = await _userManager.ResetPasswordAsync(user, token, dto.NewPassword);
+
+        //    if (!result.Succeeded) return BadRequest(result.Errors);
+
+        //    return Ok(new { Message = "Parola a fost resetată forțat." });
+        //}
+
+
+
+
+
+
+
+
+
     }
-
-
-
-
-
-
-
-
-
-
-
 }

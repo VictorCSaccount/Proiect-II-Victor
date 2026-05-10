@@ -1,13 +1,38 @@
-﻿using ProiectII.DTO.AdoptionProcess;
+﻿using Microsoft.EntityFrameworkCore;
+using ProiectII.Data;
+using ProiectII.DTO.AdoptionProcess;
 using ProiectII.Interfaces;
 using ProiectII.Models;
 
 namespace ProiectII.Services.CoreDomain
 {
-    public class AdoptionService(IAdoptionRepository adoptionRepository, IFoxRepository foxRepository) : IAdoptionService
+    public class AdoptionService(IAdoptionRepository adoptionRepository, IFoxRepository foxRepository, ApplicationDbContext _context) : IAdoptionService
     {
         public async Task<AdoptionDto> CreateAdoptionRequestAsync(string userId, AdoptionRequestDto dto)
         {
+
+            //verfificare eligibilitate vuple de adoptie!!!
+
+
+            var fox = await _context.Foxes.Include(f => f.Status).FirstOrDefaultAsync(f => f.Id == dto.FoxId);
+            if (fox == null)
+            {
+                throw new Exception("Vulpea nu există în sistem.");
+            }
+
+            // Lista statusurilor care BLOCHEAZĂ adopția. 
+            // Ajustează numele ("Quarantine", "In Treatment", "Adopted") în funcție de ce ai în BD.
+            var forbiddenStatuses = new List<string> { "Quarantine", "In Treatment", "Adopted", "Dead" };
+
+            if (fox.Status != null && forbiddenStatuses.Contains(fox.Status.Name))
+            {
+                throw new Exception($"Cererea a fost respinsă. Vulpea nu este adoptabilă deoarece are statusul: {fox.Status.Name}.");
+            }
+
+
+
+
+
             var adoption = new Adoption
             {
                 FoxId = dto.FoxId,

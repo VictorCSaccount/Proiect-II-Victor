@@ -3,13 +3,12 @@
     public class CreateEnclosureDto
     {
         public string Name { get; set; } = string.Empty;
-
-        public string HexColor { get; set; } = "#FFFFFF";
-
-        public List<CoordinateDto> Points { get; set; } = new();
-
+        public string Description { get; set; } = string.Empty;
+        public string ColorMaskHex { get; set; } = "#FFFFFF";
         public double Opacity { get; set; } = 0.5;
+        public uint CenterLocationId { get; set; }
 
-        public CoordinateDto Center { get; set; } = new();
+        // Lista de puncte care formează poligonul
+        public List<EnclosurePointDto> Points { get; set; } = new List<EnclosurePointDto>();
     }
 }

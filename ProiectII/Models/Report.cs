@@ -12,10 +12,9 @@ namespace ProiectII.Models
         [Column(TypeName = "text")]
         public string Description { get; set; } = string.Empty;
 
-        [Required]
+        //[Required] un raport poate fi facut si de un utilizator anonim, deci ReporterId poate fi null
         [MaxLength(255)]
-
-        public string ReporterId { get; set; }
+        public string? ReporterId { get; set; }
 
         [ForeignKey("ReporterId")]
         public virtual ApplicationUser? Reporter { get; set; }

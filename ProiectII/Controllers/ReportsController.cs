@@ -82,10 +82,12 @@ public class ReportsController : ControllerBase
 
 
     [HttpPost]
+    [AllowAnonymous] // CRITIC: Suprascrie protecția clasei pentru acest endpoint
     public async Task<IActionResult> CreateReport([FromForm] CreateReportDto dto)
     {
         string? currentUserId = null;
 
+        // Extragem ID-ul doar dacă utilizatorul este validat
         if (User.Identity != null && User.Identity.IsAuthenticated)
         {
             currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

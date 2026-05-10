@@ -26,15 +26,20 @@ namespace ProiectII.Services.CoreDomain
 
         public async Task<ReportDto> CreateReportAsync(CreateReportDto dto, string? userId)
         {
-            // 1. Salvarea imaginii pe disc (Fără poză, sistemul crapă mai sus, e ok)
-            string imageUrl = await _fileService.SaveFileAsync(dto.ImageFile, "reports");
+            string? imageUrl = null;
+
+            // 1. Salvarea imaginii DOAR dacă a fost trimisă fizic
+            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+            {
+                imageUrl = await _fileService.SaveFileAsync(dto.ImageFile, "reports");
+            }
 
             try
             {
                 // 2. Crearea Locației
                 var location = new Location
                 {
-                    Name = "Report Location", // Sau poți lăsa null dacă nu ai nevoie de nume
+                    Name = "Report Location",
                     Coordinate = new Coordinate
                     {
                         Latitude = (decimal)dto.Latitude,
@@ -43,20 +48,20 @@ namespace ProiectII.Services.CoreDomain
                 };
 
                 await _locationRepository.AddAsync(location);
-                await _locationRepository.SaveChangesAsync(); // Aici MySQL ne dă înapoi location.Id
+                await _locationRepository.SaveChangesAsync(); // Extragem ID-ul locației
 
-                // 3. Crearea Raportului (Mapare curată, apoi suprascriere manuală)
+                // 3. Crearea Raportului
                 var report = _mapper.Map<Report>(dto);
 
-                report.ImageUrl = imageUrl;
+                report.ImageUrl = imageUrl; // Va fi null dacă nu a fost urcată poză
                 report.LocationId = location.Id;
-                report.ReporterId = string.IsNullOrWhiteSpace(userId) ? null : userId; // Securitate adăugată
+                report.ReporterId = string.IsNullOrWhiteSpace(userId) ? null : userId;
                 report.ReportStatus = ReportStatus.Pending;
                 report.CreatedAt = DateTime.UtcNow;
 
                 await _reportRepository.AddAsync(report);
-                await _reportRepository.SaveChangesAsync(); // Aici raportul este oficial în DB
-                
+                await _reportRepository.SaveChangesAsync();
+
                 var completeReport = await _reportRepository.GetByIdWithDetailsAsync(report.Id);
 
                 if (completeReport == null)
@@ -66,7 +71,11 @@ namespace ProiectII.Services.CoreDomain
             }
             catch (Exception)
             {
-                _fileService.DeleteFile(imageUrl);
+                // 4. Rollback manual DOAR dacă a existat o imagine salvată
+                if (!string.IsNullOrEmpty(imageUrl))
+                {
+                    _fileService.DeleteFile(imageUrl);
+                }
                 throw;
             }
         }
